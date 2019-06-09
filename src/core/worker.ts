@@ -19,6 +19,7 @@ export class Worker {
             if(collectionDescriptions.length == 0) Worker.printOutput("warn", "Input file is empty!");
 
             let generatedCollections = Worker.parseCollectionDescriptions(collectionDescriptions);
+            generatedCollections = Generator.resolveCollectionKeys(generatedCollections);
 
             let outputArr: string [];
 
@@ -27,10 +28,10 @@ export class Worker {
                     outputArr = JSON.stringify(generatedCollections).split("\n");
                     break;
                 case "sql":
-                    throw new Error("Not yet implemented");
+                    outputArr = Transformator.transformToSQL(generatedCollections);
                     break;
                 case "mongodb":
-                    outputArr = Transformator.transformToMongo(generatedCollections, 3);
+                    outputArr = Transformator.transformToMongo(generatedCollections, 200);
                     break;
                 default: 
                     throw new Error(`Output format '${opts.outputFormat}' is not allowed. Check '--help' for help`);
@@ -45,7 +46,7 @@ export class Worker {
                         outputArr.forEach(el => console.log(el));
                         break;
                     case "file":
-                        Worker.writeToFile(opts.outputFilename, outputArr.join(""));
+                        Worker.writeToFile(opts.outputFilename, outputArr.join("\n"));
                         break;
                     default:
                         throw new Error(`Output Type '${opts.outputType}' is not allowed. Check '--help' for help`);

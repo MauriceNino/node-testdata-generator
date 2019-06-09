@@ -1,11 +1,119 @@
 import { IDefaultDocumentFieldDescription, IDocumentFieldDescription, ICollectionDescription } from "../models/modelInput";
 import { IGeneratedField, IGeneratedCollection, IGeneratedDocument } from "../models/modelGenerated";
 import { GeneratorTypes } from "../models/generatorTypes";
+var ObjectID = require('bson').ObjectID;
 
 /// <reference path="../../node_modules/@types/faker/index.d.ts"/>
 var faker: Faker.FakerStatic = require('faker');
 
 export class Generator {
+    ////////////////////////////////////////
+    // Generate the keys of testdata
+    ////////////////////////////////////////
+
+    public static resolveCollectionKeys(generatedCollections: IGeneratedCollection[]): IGeneratedCollection[] {
+        let possibleKeys: Map<number, any[]> = new Map();
+
+        generatedCollections.forEach(c => {
+            c.documents.forEach(d => {
+                let tempKeys: Map<number, any[]> = Generator.findReferenceKeysInFields(d.documentFields);
+                tempKeys.forEach((val: any[], key: number) => {
+                    // If return map has no key with that number, just append it
+                    if(!possibleKeys.has(key)) {
+                        possibleKeys.set(key, val);
+                    } else {
+                        possibleKeys.set(key, possibleKeys.get(key).concat(val));
+                    }
+                })
+            });
+        });
+
+        generatedCollections.forEach(c => {
+            c.documents.forEach(d => {
+                d.documentFields = Generator.fillReferencesInFields(d.documentFields, possibleKeys);
+            });
+        });
+
+        return generatedCollections;
+    }
+
+    private static fillReferencesInFields(fields: IGeneratedField[], possibleKeys: Map<number, any[]>): IGeneratedField[] {
+        fields.forEach(f => {
+            if(f.referenceTo != null) {
+                let validKeys = possibleKeys.get(f.referenceTo);
+                f.fieldValue = validKeys[Generator.nextRandomNumberBetween(0, validKeys.length-1)];
+            }
+
+            if(f.fieldIsObject || f.fieldIsArray) {
+                if(f.fieldIsObject) {
+                    f.fieldValue = Generator.fillReferencesInFields(f.fieldValue, possibleKeys);
+                } else if(f.fieldIsArray) {
+                    f.fieldValue.forEach((subFields: IGeneratedField[]) => {
+                        subFields = Generator.fillReferencesInFields(subFields, possibleKeys);
+                    });
+                }
+            }
+        })
+
+        return fields;
+    }
+
+    private static findReferenceKeysInFields(fields: IGeneratedField[]): Map<number, any[]> {
+        let returnMap: Map<number, any[]> = new Map();
+
+        // Run through all  fields
+        fields.forEach(f => {
+            // Check if field has a referenceKey, if yes add it to returnMap
+            if(f.referenceKey != null) {
+                if(!returnMap.has(f.referenceKey)) {
+                    returnMap.set(f.referenceKey, [ f.fieldValue ]);
+                } else {
+                    returnMap.get(f.referenceKey).push(f.fieldValue);
+                }
+            }
+            
+            // If field is array or object you need to run through all subFields and merge back the referenceKeys of subFields
+            if(f.fieldIsObject || f.fieldIsArray) {
+                let tempMap: Map<number, any[]> = new Map();
+                if(f.fieldIsObject) {
+                    tempMap = Generator.findReferenceKeysInFields(f.fieldValue);
+                } else if(f.fieldIsArray) {
+                    let subTempMap: Map<number, any[]> = new Map();
+                    f.fieldValue.forEach((subFields: IGeneratedField[]) => {
+                        subTempMap = Generator.findReferenceKeysInFields(subFields);
+
+                        // Merge found keys in subFields back to tempMap
+                        subTempMap.forEach((val: any[], key: number) => {
+                            // If return map has no key with that number, just append it
+                            if(tempMap.get(key) == null) {
+                                tempMap.set(key, val);
+                            } else {
+                                tempMap.get(key).push(val);
+                            }
+                        });
+                    });
+                }
+
+                // Merge found keys in subFields back to returnMap
+                tempMap.forEach((val: any[], key: number) => {
+                    // If return map has no key with that number, just append it
+                    if(returnMap.get(key) == null) {
+                        returnMap.set(key, val);
+                    } else {
+                        returnMap.get(key).push(val);
+                    }
+                });
+            }
+        });
+        return returnMap;
+    }
+
+
+
+
+    ////////////////////////////////////////
+    // Generate the testdata
+    ////////////////////////////////////////
     
     public static generateCollection(collectionDescription: ICollectionDescription): IGeneratedCollection {
         let tempResultCollection: IGeneratedCollection = {
@@ -52,6 +160,7 @@ export class Generator {
             return returnField
         }
         
+        let skipQuotations: boolean = false;
         switch(fieldDescription.type) {
             case GeneratorTypes.String:
                 returnField.fieldValue = Generator.generateString(defaultFieldDescription, fieldDescription.unique, fieldDescription.lengthFrom, fieldDescription.lengthTo);
@@ -101,8 +210,8 @@ export class Generator {
             case GeneratorTypes.Constant:
                 returnField.fieldValue = fieldDescription.constantValue;
                 break;
-            case GeneratorTypes.Reference:
-                throw new Error("Not implemented");
+            case GeneratorTypes.ReferenceTo:
+                returnField.referenceTo = fieldDescription.referenceTo;
                 break;
             case GeneratorTypes.Select:
                 if(fieldDescription.fromArray[0] instanceof String) {
@@ -114,9 +223,18 @@ export class Generator {
                 //@ts-ignore
                 returnField.fieldValue = faker[fieldDescription.namespaceName][fieldDescription.methodName]();
                 break;
+            case GeneratorTypes.ObjectId:
+                const id  = new ObjectID();
+                returnField.fieldValue = `new ObjectId("${id.toString()}")`;
+                skipQuotations = true;
+                break;
+        }
+
+        if(fieldDescription.referenceKey != null) {
+            returnField.referenceKey = fieldDescription.referenceKey;
         }
         
-        if(typeof returnField.fieldValue == "string" || returnField.fieldValue instanceof String) {
+        if(!skipQuotations && (typeof returnField.fieldValue == "string" || returnField.fieldValue instanceof String)) {
             returnField.fieldNeedsQuotations = true;
         }
 

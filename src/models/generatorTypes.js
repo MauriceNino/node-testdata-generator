@@ -13,9 +13,10 @@ var GeneratorTypes = /** @class */ (function () {
     GeneratorTypes.Date = "date";
     GeneratorTypes.Position = "position";
     GeneratorTypes.Constant = "constant";
-    GeneratorTypes.Reference = "reference";
+    GeneratorTypes.ReferenceTo = "referenceTo";
     GeneratorTypes.Select = "select";
     GeneratorTypes.Faker = "faker";
+    GeneratorTypes.ObjectId = "objectId";
     return GeneratorTypes;
 }());
 exports.GeneratorTypes = GeneratorTypes;

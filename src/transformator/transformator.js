@@ -5,6 +5,32 @@ var Transformator = /** @class */ (function () {
     }
     Transformator.transformToSQL = function (collections) {
         var resultArr = [];
+        collections.forEach(function (collection) {
+            collection.documents.forEach(function (document) {
+                var singleInsert = "INSERT INTO " + collection.dbName + "." + collection.collectionName + " (";
+                var isFirst = true;
+                document.documentFields.forEach(function (f) {
+                    if (isFirst)
+                        isFirst = false;
+                    else
+                        singleInsert += ", ";
+                    singleInsert += f.fieldName;
+                });
+                singleInsert += ") VALUES (";
+                isFirst = true;
+                document.documentFields.forEach(function (f) {
+                    if (isFirst)
+                        isFirst = false;
+                    else
+                        singleInsert += ", ";
+                    singleInsert += f.fieldNeedsQuotations ? "'" : "";
+                    singleInsert += f.fieldValue;
+                    singleInsert += f.fieldNeedsQuotations ? "'" : "";
+                });
+                singleInsert += ");";
+                resultArr.push(singleInsert);
+            });
+        });
         return resultArr;
     };
     Transformator.transformToMongo = function (collections, bulkinsertMax) {
@@ -55,7 +81,7 @@ var Transformator = /** @class */ (function () {
         }
         if (field.fieldIsArray) {
             var isFirst_2 = true;
-            var returnStr_2 = "[";
+            var returnStr_2 = "\"" + field.fieldName + "\": [";
             field.fieldValue.forEach(function (arrField) {
                 if (isFirst_2)
                     isFirst_2 = false;

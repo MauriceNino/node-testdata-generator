@@ -1,11 +1,109 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var generatorTypes_1 = require("../models/generatorTypes");
+var ObjectID = require('bson').ObjectID;
 /// <reference path="../../node_modules/@types/faker/index.d.ts"/>
 var faker = require('faker');
 var Generator = /** @class */ (function () {
     function Generator() {
     }
+    ////////////////////////////////////////
+    // Generate the keys of testdata
+    ////////////////////////////////////////
+    Generator.resolveCollectionKeys = function (generatedCollections) {
+        var possibleKeys = new Map();
+        generatedCollections.forEach(function (c) {
+            c.documents.forEach(function (d) {
+                var tempKeys = Generator.findReferenceKeysInFields(d.documentFields);
+                tempKeys.forEach(function (val, key) {
+                    // If return map has no key with that number, just append it
+                    if (!possibleKeys.has(key)) {
+                        possibleKeys.set(key, val);
+                    }
+                    else {
+                        possibleKeys.set(key, possibleKeys.get(key).concat(val));
+                    }
+                });
+            });
+        });
+        generatedCollections.forEach(function (c) {
+            c.documents.forEach(function (d) {
+                d.documentFields = Generator.fillReferencesInFields(d.documentFields, possibleKeys);
+            });
+        });
+        return generatedCollections;
+    };
+    Generator.fillReferencesInFields = function (fields, possibleKeys) {
+        fields.forEach(function (f) {
+            if (f.referenceTo != null) {
+                var validKeys = possibleKeys.get(f.referenceTo);
+                f.fieldValue = validKeys[Generator.nextRandomNumberBetween(0, validKeys.length - 1)];
+            }
+            if (f.fieldIsObject || f.fieldIsArray) {
+                if (f.fieldIsObject) {
+                    f.fieldValue = Generator.fillReferencesInFields(f.fieldValue, possibleKeys);
+                }
+                else if (f.fieldIsArray) {
+                    f.fieldValue.forEach(function (subFields) {
+                        subFields = Generator.fillReferencesInFields(subFields, possibleKeys);
+                    });
+                }
+            }
+        });
+        return fields;
+    };
+    Generator.findReferenceKeysInFields = function (fields) {
+        var returnMap = new Map();
+        // Run through all  fields
+        fields.forEach(function (f) {
+            // Check if field has a referenceKey, if yes add it to returnMap
+            if (f.referenceKey != null) {
+                if (!returnMap.has(f.referenceKey)) {
+                    returnMap.set(f.referenceKey, [f.fieldValue]);
+                }
+                else {
+                    returnMap.get(f.referenceKey).push(f.fieldValue);
+                }
+            }
+            // If field is array or object you need to run through all subFields and merge back the referenceKeys of subFields
+            if (f.fieldIsObject || f.fieldIsArray) {
+                var tempMap_1 = new Map();
+                if (f.fieldIsObject) {
+                    tempMap_1 = Generator.findReferenceKeysInFields(f.fieldValue);
+                }
+                else if (f.fieldIsArray) {
+                    var subTempMap_1 = new Map();
+                    f.fieldValue.forEach(function (subFields) {
+                        subTempMap_1 = Generator.findReferenceKeysInFields(subFields);
+                        // Merge found keys in subFields back to tempMap
+                        subTempMap_1.forEach(function (val, key) {
+                            // If return map has no key with that number, just append it
+                            if (tempMap_1.get(key) == null) {
+                                tempMap_1.set(key, val);
+                            }
+                            else {
+                                tempMap_1.get(key).push(val);
+                            }
+                        });
+                    });
+                }
+                // Merge found keys in subFields back to returnMap
+                tempMap_1.forEach(function (val, key) {
+                    // If return map has no key with that number, just append it
+                    if (returnMap.get(key) == null) {
+                        returnMap.set(key, val);
+                    }
+                    else {
+                        returnMap.get(key).push(val);
+                    }
+                });
+            }
+        });
+        return returnMap;
+    };
+    ////////////////////////////////////////
+    // Generate the testdata
+    ////////////////////////////////////////
     Generator.generateCollection = function (collectionDescription) {
         var tempResultCollection = {
             dbName: collectionDescription.databaseName,
@@ -39,6 +137,7 @@ var Generator = /** @class */ (function () {
             returnField.fieldValue = null;
             return returnField;
         }
+        var skipQuotations = false;
         switch (fieldDescription.type) {
             case generatorTypes_1.GeneratorTypes.String:
                 returnField.fieldValue = Generator.generateString(defaultFieldDescription, fieldDescription.unique, fieldDescription.lengthFrom, fieldDescription.lengthTo);
@@ -82,8 +181,8 @@ var Generator = /** @class */ (function () {
             case generatorTypes_1.GeneratorTypes.Constant:
                 returnField.fieldValue = fieldDescription.constantValue;
                 break;
-            case generatorTypes_1.GeneratorTypes.Reference:
-                throw new Error("Not implemented");
+            case generatorTypes_1.GeneratorTypes.ReferenceTo:
+                returnField.referenceTo = fieldDescription.referenceTo;
                 break;
             case generatorTypes_1.GeneratorTypes.Select:
                 if (fieldDescription.fromArray[0] instanceof String) {
@@ -95,8 +194,16 @@ var Generator = /** @class */ (function () {
                 //@ts-ignore
                 returnField.fieldValue = faker[fieldDescription.namespaceName][fieldDescription.methodName]();
                 break;
+            case generatorTypes_1.GeneratorTypes.ObjectId:
+                var id = new ObjectID();
+                returnField.fieldValue = "new ObjectId(\"" + id.toString() + "\")";
+                skipQuotations = true;
+                break;
         }
-        if (typeof returnField.fieldValue == "string" || returnField.fieldValue instanceof String) {
+        if (fieldDescription.referenceKey != null) {
+            returnField.referenceKey = fieldDescription.referenceKey;
+        }
+        if (!skipQuotations && (typeof returnField.fieldValue == "string" || returnField.fieldValue instanceof String)) {
             returnField.fieldNeedsQuotations = true;
         }
         return returnField;

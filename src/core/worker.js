@@ -22,16 +22,17 @@ var Worker = /** @class */ (function () {
             if (collectionDescriptions.length == 0)
                 Worker.printOutput("warn", "Input file is empty!");
             var generatedCollections = Worker.parseCollectionDescriptions(collectionDescriptions);
+            generatedCollections = generator_1.Generator.resolveCollectionKeys(generatedCollections);
             var outputArr = void 0;
             switch (opts.outputFormat) {
                 case "json":
                     outputArr = JSON.stringify(generatedCollections).split("\n");
                     break;
                 case "sql":
-                    throw new Error("Not yet implemented");
+                    outputArr = transformator_1.Transformator.transformToSQL(generatedCollections);
                     break;
                 case "mongodb":
-                    outputArr = transformator_1.Transformator.transformToMongo(generatedCollections, 3);
+                    outputArr = transformator_1.Transformator.transformToMongo(generatedCollections, 200);
                     break;
                 default:
                     throw new Error("Output format '" + opts.outputFormat + "' is not allowed. Check '--help' for help");
@@ -46,7 +47,7 @@ var Worker = /** @class */ (function () {
                         outputArr.forEach(function (el) { return console.log(el); });
                         break;
                     case "file":
-                        Worker.writeToFile(opts.outputFilename, outputArr.join(""));
+                        Worker.writeToFile(opts.outputFilename, outputArr.join("\n"));
                         break;
                     default:
                         throw new Error("Output Type '" + opts.outputType + "' is not allowed. Check '--help' for help");

@@ -7,6 +7,7 @@ export interface ICollectionDescription {
     documentsCountTo?: number;
 
     isDocumentStatic?: boolean;
+    injectIntoStatic?: boolean;
 
     documentDescription?: IDocumentFieldDescription [];
     staticDocuments?: any [];
@@ -68,13 +69,8 @@ export interface IDocumentFieldDescription {
     constantValue?: any;
 
     // Type reference 
-    referenceTo?: {
-        referenceId: number;
-        referenceDocumentField: string;
-    };
-    referenceKey?: {
-        referenceId: number
-    };
+    referenceTo?: number;
+    referenceKey?: number;
 
     // Type select
     fromArray?: any[];

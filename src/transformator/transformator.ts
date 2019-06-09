@@ -4,7 +4,34 @@ export class Transformator {
     public static transformToSQL(collections: IGeneratedCollection[]): string [] {
         let resultArr: string[] = [];
 
+        collections.forEach(collection => {
 
+            collection.documents.forEach(document => {
+                let singleInsert: string = `INSERT INTO ${collection.dbName}.${collection.collectionName} (`;
+                let isFirst: boolean = true;
+                document.documentFields.forEach(f => {
+                    if(isFirst) isFirst = false;
+                    else singleInsert += ", ";
+
+                    singleInsert += f.fieldName;
+                })
+
+                singleInsert += ") VALUES (";
+
+                isFirst = true;
+                document.documentFields.forEach(f => {
+                    if(isFirst) isFirst = false;
+                    else singleInsert += ", ";
+
+                    singleInsert += f.fieldNeedsQuotations?"'":"";
+                    singleInsert += f.fieldValue;
+                    singleInsert += f.fieldNeedsQuotations?"'":"";
+                })
+                singleInsert+=");";
+                resultArr.push(singleInsert);
+            })
+
+        })
 
         return resultArr;
     }
@@ -66,7 +93,7 @@ export class Transformator {
         }
         if(field.fieldIsArray) {
             let isFirst: boolean = true;
-            let returnStr: string = "[";
+            let returnStr: string = `"${field.fieldName}": [`;
             (field.fieldValue as any[]).forEach((arrField: any) => {
                 if(isFirst) isFirst = false;
                 else returnStr += ", "

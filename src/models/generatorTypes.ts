@@ -9,7 +9,8 @@ export class GeneratorTypes {
     public static Date: string = "date";
     public static Position: string = "position";
     public static Constant: string = "constant";
-    public static Reference: string = "reference";
+    public static ReferenceTo: string = "referenceTo";
     public static Select: string = "select";
     public static Faker: string = "faker";
+    public static ObjectId: string = "objectId";
 }
