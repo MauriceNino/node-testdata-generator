@@ -60,7 +60,7 @@ export class Generator {
 
     private static findReferenceKeysInFields(fields: IGeneratedField[]): Map<number, any[]> {
         let returnMap: Map<number, any[]> = new Map();
-
+        
         // Run through all  fields
         fields.forEach(f => {
             // Check if field has a referenceKey, if yes add it to returnMap
@@ -150,10 +150,28 @@ export class Generator {
 
         for (let property in staticDocument) {
             if (staticDocument.hasOwnProperty(property)) {
-                let tempField: IGeneratedField = {
-                    fieldName: property,
-                    fieldValue: staticDocument[property]
-                };
+                let tempField: IGeneratedField;
+                if(Array.isArray(staticDocument[property])) {
+                    let arrContent = Generator.generateFieldFromStatic(staticDocument[property]);
+                    arrContent = arrContent.map(c => c.fieldValue);
+
+                    tempField = {
+                        fieldName: property,
+                        fieldValue: arrContent,
+                        fieldIsArray: true
+                    };
+                } else if(JSON.stringify(staticDocument[property]).charAt(0)=="{") {
+                    tempField = {
+                        fieldName: property,
+                        fieldValue: Generator.generateFieldFromStatic(staticDocument[property]),
+                        fieldIsObject: true
+                    };
+                } else {
+                    tempField = {
+                        fieldName: property,
+                        fieldValue: staticDocument[property]
+                    };
+                }
         
                 if(typeof tempField.fieldValue == "string" || tempField.fieldValue instanceof String) {
                     tempField.fieldNeedsQuotations = true;
@@ -227,11 +245,16 @@ export class Generator {
                 break;
             case GeneratorTypes.Position:
                 const randomPos = Generator.generatePosition(defaultFieldDescription, fieldDescription.positionCenterCoordinates, fieldDescription.positionRadius);
-                let returnObj = {}
-                //@ts-ignore
-                returnObj[fieldDescription.positionNameX] = randomPos.long;
-                //@ts-ignore
-                returnObj[fieldDescription.positionNameY] = randomPos.lat;
+                let returnObj: IGeneratedField[] = []
+
+                returnObj.push({
+                    fieldName: fieldDescription.positionNameX,
+                    fieldValue: randomPos.lat
+                });
+                returnObj.push({
+                    fieldName: fieldDescription.positionNameY,
+                    fieldValue: randomPos.long
+                });
 
                 returnField.fieldValue = returnObj;
                 returnField.fieldIsObject = true;
@@ -246,11 +269,12 @@ export class Generator {
                 if(fieldDescription.fromArray[0] instanceof String) {
                     returnField.fieldNeedsQuotations = true;
                 }
+                returnField.fieldIsJsonObject = fieldDescription.selectFromObjects;
                 returnField.fieldValue = Generator.generateSelect(defaultFieldDescription, fieldDescription.fromArray);
                 break;
             case GeneratorTypes.Faker:
                 //@ts-ignore
-                returnField.fieldValue = faker[fieldDescription.namespaceName][fieldDescription.methodName]();
+                returnField.fieldValue = faker[fieldDescription.namespaceName][fieldDescription.methodName](...fieldDescription.methodParams);
                 break;
             case GeneratorTypes.ObjectId:
                 const id  = new ObjectID();

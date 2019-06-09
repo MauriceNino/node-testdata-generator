@@ -74,10 +74,12 @@ export interface IDocumentFieldDescription {
 
     // Type select
     fromArray?: any[];
+    selectFromObjects?: boolean;
 
     // Type faker
     methodName?: string;
     namespaceName?: string;
+    methodParams?: any[];
 }
 
 export class CmdOpts {

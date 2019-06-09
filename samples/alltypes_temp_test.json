@@ -1,0 +1,182 @@
+[
+    {
+        "databaseName": "db",
+        "collectionName": "users",
+        "documentsCount": 1,
+        "documentDescription": [
+            {
+                "fieldName": "userSecret",
+                "type": "string",
+                "nullPercentage": 0,
+                "lengthFrom": 20,
+                "lengthTo": 25
+            },
+            
+            {
+                "fieldName": "userAge",
+                "type": "number",
+                "nullPercentage": 0,
+                "numberFrom": 18,
+                "numberTo": 50
+            },
+            
+            {
+                "fieldName": "userMainHobby",
+                "type": "object",
+                "nullPercentage": 0,
+                "subDocumentDescriptions": [
+                    {
+                        "fieldName": "hobbyName",
+                        "type": "string",
+                        "nullPercentage": 0,
+                        "lengthFrom": 20,
+                        "lengthTo": 25
+                    },
+            
+                    {
+                        "fieldName": "doHobbyInHours",
+                        "type": "number",
+                        "nullPercentage": 0,
+                        "numberFrom": 5,
+                        "numberTo": 20
+                    }
+                ]
+            },
+            
+            {
+                "fieldName": "incrementedStuff",
+                "type": "array",
+                "nullPercentage": 0,
+                "size": 5,
+                "subDocumentDescriptions": [
+                    {
+                        "fieldName": "number",
+                        "type": "autoIncrement",
+                        "nullPercentage": 0,
+                        "autoIncrementStart": 100,
+                        "autoIncrementSteps": 11
+                    }
+                ]
+            },
+            
+            {
+                "fieldName": "cash",
+                "type": "decimal",
+                "nullPercentage": 0,
+                "numberFrom": 100,
+                "numberTo": 5000,
+                "maxDecimalPlaces": 2
+            },
+            
+            {
+                "fieldName": "isAdmin",
+                "type": "boolean",
+                "nullPercentage": 0,
+                "percentTrue": 10
+            },
+            
+            {
+                "fieldName": "joinDate",
+                "type": "date",
+                "nullPercentage": 0,
+                "dateFrom": "2018-01-01T00:00:00+00:00",
+                "dateTo": "2019-01-01T00:00:00+00:00"
+            },
+            
+            {
+                "fieldName": "const",
+                "type": "constant",
+                "nullPercentage": 0,
+                "constantValue": "test"
+            },
+            
+            {
+                "fieldName": "const2",
+                "type": "constant",
+                "nullPercentage": 0,
+                "constantValue": {
+                    "test": 1
+                }
+            },
+            
+            {
+                "fieldName": "randomStrSelected",
+                "type": "select",
+                "nullPercentage": 0,
+                "fromArray": [
+                    "test", "stuff"
+                ]
+            },
+            
+            {
+                "fieldName": "someRandomPosition",
+                "type": "position",
+                "nullPercentage": 0,
+                "positionCenterCoordinates": {
+                    "long": 32,
+                    "lat": -32
+                },
+                "positionRadius": 10,
+                "positionNameX": "X",
+                "positionNameY": "Y"
+            },
+            
+            {
+                "fieldName": "mightBeNull",
+                "type": "decimal",
+                "nullPercentage": 50,
+                "numberFrom": 1,
+                "numberTo": 2,
+                "maxDecimalPlaces": 2
+            },
+            
+            {
+                "fieldName": "oneArrayWithDynamicSizeAndOneWithout",
+                "type": "object",
+                "nullPercentage": 0,
+                "subDocumentDescriptions": [
+                    {
+                        "fieldName": "dynamicSize3to5",
+                        "type": "array",
+                        "nullPercentage": 0,
+                        "sizeFrom": 3,
+                        "sizeTo": 5,
+                        "subDocumentDescriptions": [
+                            {
+                                "fieldName": "number",
+                                "type": "number",
+                                "nullPercentage": 0,
+                                "numberFrom": 1,
+                                "numberTo": 1
+                            }
+                        ]
+                    },
+            
+                    {
+                        "fieldName": "staticSize2",
+                        "type": "array",
+                        "nullPercentage": 0,
+                        "size": 2,
+                        "subDocumentDescriptions": [
+                            {
+                                "fieldName": "number",
+                                "type": "number",
+                                "nullPercentage": 0,
+                                "numberFrom": 1,
+                                "numberTo": 1
+                            }
+                        ]
+                    }
+                ]
+            },
+            
+            {
+                "fieldName": "fake",
+                "type": "faker",
+                "namespaceName": "name",
+                "methodName": "findName",
+                "nullPercentage": 50
+            }
+        ]
+    }
+]

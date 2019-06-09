@@ -1,0 +1,46 @@
+[
+    {
+        "databaseName": "db",
+        "collectionName": "users",
+        "documentsCount": 2,
+        "documentDescription": [        
+            {
+                "fieldName": "_id",
+                "type": "objectId",
+                "nullPercentage": 0,
+                "referenceKey": 0
+            },    
+            {
+                "fieldName": "username",
+                "type": "faker",
+                "namespaceName": "name",
+                "methodName": "findName",
+                "nullPercentage": 0
+            },    
+            {
+                "fieldName": "language",
+                "type": "referenceTo",
+                "nullPercentage": 0,
+                "referenceTo": 1
+            }
+        ]
+    },
+    {
+        "databaseName": "db",
+        "collectionName": "languages",
+        "documentsCount": 2,
+        "documentDescription": [
+            {
+                "fieldName": "_id",
+                "type": "objectId",
+                "nullPercentage": 0,
+                "referenceKey": 1
+            }
+        ],
+        "isDocumentStatic": true,
+        "injectIntoStatic": true,
+        "staticDocuments": [
+            {"code":"ab","name":"Abkhaz","nativeName":"аҧсуа"}, {"code":"aa","name":"Afar","nativeName":"Afaraf"}, {"code":"af","name":"Afrikaans","nativeName":"Afrikaans"}
+        ]
+    }
+]

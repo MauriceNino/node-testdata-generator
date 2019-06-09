@@ -32,7 +32,7 @@ var Worker = /** @class */ (function () {
                     outputArr = transformator_1.Transformator.transformToSQL(generatedCollections);
                     break;
                 case "mongodb":
-                    outputArr = transformator_1.Transformator.transformToMongo(generatedCollections, 200);
+                    outputArr = transformator_1.Transformator.transformToMongo(generatedCollections, 1);
                     break;
                 default:
                     throw new Error("Output format '" + opts.outputFormat + "' is not allowed. Check '--help' for help");

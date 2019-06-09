@@ -31,7 +31,7 @@ export class Worker {
                     outputArr = Transformator.transformToSQL(generatedCollections);
                     break;
                 case "mongodb":
-                    outputArr = Transformator.transformToMongo(generatedCollections, 200);
+                    outputArr = Transformator.transformToMongo(generatedCollections, 1);
                     break;
                 default: 
                     throw new Error(`Output format '${opts.outputFormat}' is not allowed. Check '--help' for help`);

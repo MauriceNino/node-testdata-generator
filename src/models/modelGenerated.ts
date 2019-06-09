@@ -13,6 +13,7 @@ export interface IGeneratedField {
     fieldValue: any,
     fieldNeedsQuotations?: boolean,
     fieldIsObject?: boolean,
+    fieldIsJsonObject?: boolean,
     fieldIsArray?: boolean,
     referenceKey?: number,
     referenceTo?: number

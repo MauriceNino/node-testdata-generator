@@ -131,10 +131,29 @@ var Generator = /** @class */ (function () {
         var tempFields = [];
         for (var property in staticDocument) {
             if (staticDocument.hasOwnProperty(property)) {
-                var tempField = {
-                    fieldName: property,
-                    fieldValue: staticDocument[property]
-                };
+                var tempField = void 0;
+                if (Array.isArray(staticDocument[property])) {
+                    var arrContent = Generator.generateFieldFromStatic(staticDocument[property]);
+                    arrContent = arrContent.map(function (c) { return c.fieldValue; });
+                    tempField = {
+                        fieldName: property,
+                        fieldValue: arrContent,
+                        fieldIsArray: true
+                    };
+                }
+                else if (JSON.stringify(staticDocument[property]).charAt(0) == "{") {
+                    tempField = {
+                        fieldName: property,
+                        fieldValue: Generator.generateFieldFromStatic(staticDocument[property]),
+                        fieldIsObject: true
+                    };
+                }
+                else {
+                    tempField = {
+                        fieldName: property,
+                        fieldValue: staticDocument[property]
+                    };
+                }
                 if (typeof tempField.fieldValue == "string" || tempField.fieldValue instanceof String) {
                     tempField.fieldNeedsQuotations = true;
                 }
@@ -151,6 +170,7 @@ var Generator = /** @class */ (function () {
         return tempResultFields;
     };
     Generator.generateField = function (fieldDescription) {
+        var _a;
         var defaultFieldDescription = Generator.extractDefaultDescription(fieldDescription);
         var returnField = {
             fieldName: fieldDescription.fieldName,
@@ -193,11 +213,15 @@ var Generator = /** @class */ (function () {
                 break;
             case generatorTypes_1.GeneratorTypes.Position:
                 var randomPos = Generator.generatePosition(defaultFieldDescription, fieldDescription.positionCenterCoordinates, fieldDescription.positionRadius);
-                var returnObj = {};
-                //@ts-ignore
-                returnObj[fieldDescription.positionNameX] = randomPos.long;
-                //@ts-ignore
-                returnObj[fieldDescription.positionNameY] = randomPos.lat;
+                var returnObj = [];
+                returnObj.push({
+                    fieldName: fieldDescription.positionNameX,
+                    fieldValue: randomPos.lat
+                });
+                returnObj.push({
+                    fieldName: fieldDescription.positionNameY,
+                    fieldValue: randomPos.long
+                });
                 returnField.fieldValue = returnObj;
                 returnField.fieldIsObject = true;
                 break;
@@ -211,11 +235,12 @@ var Generator = /** @class */ (function () {
                 if (fieldDescription.fromArray[0] instanceof String) {
                     returnField.fieldNeedsQuotations = true;
                 }
+                returnField.fieldIsJsonObject = fieldDescription.selectFromObjects;
                 returnField.fieldValue = Generator.generateSelect(defaultFieldDescription, fieldDescription.fromArray);
                 break;
             case generatorTypes_1.GeneratorTypes.Faker:
                 //@ts-ignore
-                returnField.fieldValue = faker[fieldDescription.namespaceName][fieldDescription.methodName]();
+                returnField.fieldValue = (_a = faker[fieldDescription.namespaceName])[fieldDescription.methodName].apply(_a, fieldDescription.methodParams);
                 break;
             case generatorTypes_1.GeneratorTypes.ObjectId:
                 var id = new ObjectID();

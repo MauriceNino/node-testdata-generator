@@ -40,15 +40,15 @@ export class Transformator {
         let resultArr: string[] = [];
 
         collections.forEach(collection => {
-            let singleInsert: string = `${collection.dbName}.${collection.collectionName}.insertMany([`;
+            let singleInsert: string = `${collection.dbName}.${collection.collectionName}.insert(`;
 
             let isFirstDoc: boolean = true;
             collection.documents.forEach((document, index) => {
                 if(index % bulkinsertMax == 0 && index != 0 && index < collection.documents.length) {
-                    singleInsert += "])";
+                    singleInsert += ");";
                     resultArr.push(singleInsert);
 
-                    singleInsert = `${collection.dbName}.${collection.collectionName}.insertMany([`;
+                    singleInsert = `${collection.dbName}.${collection.collectionName}.insert(`;
 
                     isFirstDoc = true;
                 }
@@ -60,17 +60,21 @@ export class Transformator {
 
                 let isFirstField: boolean = true;
                 document.documentFields.forEach(f => {
-                    if(isFirstField) isFirstField = false;
-                    else singleInsert += ", ";
+                    let field: string = Transformator.transforSingleMongoField(f);
 
-                    singleInsert += Transformator.transforSingleMongoField(f);
+                    if(field != null) {
+                        if(isFirstField) isFirstField = false;
+                        else singleInsert += ", ";
+    
+                        singleInsert += Transformator.transforSingleMongoField(f);
+                    }
                 })
 
                 singleInsert += "}";
 
             })
 
-            singleInsert+="])";
+            singleInsert+=");";
             resultArr.push(singleInsert);
         })
         return resultArr;
@@ -92,11 +96,14 @@ export class Transformator {
             return returnStr;
         }
         if(field.fieldIsArray) {
+            if(field.fieldValue == 0) return null;
+            
             let isFirst: boolean = true;
             let returnStr: string = `"${field.fieldName}": [`;
             (field.fieldValue as any[]).forEach((arrField: any) => {
                 if(isFirst) isFirst = false;
                 else returnStr += ", "
+
 
                 let isFirstObj: boolean = true;
                 returnStr += "{";
@@ -112,6 +119,12 @@ export class Transformator {
 
             return returnStr;
         }
+        if(field.fieldIsJsonObject) {
+            let returnStr: string = `"${field.fieldName}": ${JSON.stringify(field.fieldValue)}`;
+            return returnStr;
+        }
+
+        if(field.fieldValue == null ) return null;
 
         if(field.fieldNeedsQuotations)
             return `"${field.fieldName}": "${field.fieldValue}"`;

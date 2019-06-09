@@ -1,0 +1,56 @@
+[
+    {
+        "databaseName": "db",
+        "collectionName": "users",
+        "documentsCount": 10,
+        "documentDescription": [        
+            {
+                "fieldName": "_id",
+                "type": "objectId",
+                "nullPercentage": 0,
+                "referenceKey": 0
+            },    
+            {
+                "fieldName": "username",
+                "type": "faker",
+                "namespaceName": "name",
+                "methodName": "findName",
+                "nullPercentage": 0
+            }
+        ]
+    },
+    {
+        "databaseName": "db",
+        "collectionName": "groups",
+        "documentsCount": 1,
+        "documentDescription": [
+            {
+                "fieldName": "_id",
+                "type": "objectId",
+                "nullPercentage": 0,
+                "referenceKey": 1
+            },    
+            {
+                "fieldName": "groupname",
+                "type": "string",
+                "nullPercentage": 0,
+                "lengthFrom": 20,
+                "lengthTo": 40
+            },
+            {
+                "fieldName": "users",
+                "type": "array",
+                "sizeFrom": 2,
+                "sizeTo": 30,
+                "subDocumentDescriptions": [
+                    {
+                        "fieldName": "user",
+                        "type": "referenceTo",
+                        "nullPercentage": 0,
+                        "referenceTo": 0
+                    }
+                ]
+            }
+        ]
+    }
+]

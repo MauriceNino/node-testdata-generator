@@ -36,13 +36,13 @@ var Transformator = /** @class */ (function () {
     Transformator.transformToMongo = function (collections, bulkinsertMax) {
         var resultArr = [];
         collections.forEach(function (collection) {
-            var singleInsert = collection.dbName + "." + collection.collectionName + ".insertMany([";
+            var singleInsert = collection.dbName + "." + collection.collectionName + ".insert(";
             var isFirstDoc = true;
             collection.documents.forEach(function (document, index) {
                 if (index % bulkinsertMax == 0 && index != 0 && index < collection.documents.length) {
-                    singleInsert += "])";
+                    singleInsert += ");";
                     resultArr.push(singleInsert);
-                    singleInsert = collection.dbName + "." + collection.collectionName + ".insertMany([";
+                    singleInsert = collection.dbName + "." + collection.collectionName + ".insert(";
                     isFirstDoc = true;
                 }
                 if (isFirstDoc)
@@ -52,15 +52,18 @@ var Transformator = /** @class */ (function () {
                 singleInsert += "{";
                 var isFirstField = true;
                 document.documentFields.forEach(function (f) {
-                    if (isFirstField)
-                        isFirstField = false;
-                    else
-                        singleInsert += ", ";
-                    singleInsert += Transformator.transforSingleMongoField(f);
+                    var field = Transformator.transforSingleMongoField(f);
+                    if (field != null) {
+                        if (isFirstField)
+                            isFirstField = false;
+                        else
+                            singleInsert += ", ";
+                        singleInsert += Transformator.transforSingleMongoField(f);
+                    }
                 });
                 singleInsert += "}";
             });
-            singleInsert += "])";
+            singleInsert += ");";
             resultArr.push(singleInsert);
         });
         return resultArr;
@@ -80,6 +83,8 @@ var Transformator = /** @class */ (function () {
             return returnStr_1;
         }
         if (field.fieldIsArray) {
+            if (field.fieldValue == 0)
+                return null;
             var isFirst_2 = true;
             var returnStr_2 = "\"" + field.fieldName + "\": [";
             field.fieldValue.forEach(function (arrField) {
@@ -101,6 +106,12 @@ var Transformator = /** @class */ (function () {
             returnStr_2 += "]";
             return returnStr_2;
         }
+        if (field.fieldIsJsonObject) {
+            var returnStr = "\"" + field.fieldName + "\": " + JSON.stringify(field.fieldValue);
+            return returnStr;
+        }
+        if (field.fieldValue == null)
+            return null;
         if (field.fieldNeedsQuotations)
             return "\"" + field.fieldName + "\": \"" + field.fieldValue + "\"";
         else
