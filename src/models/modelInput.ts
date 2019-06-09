@@ -1,16 +1,16 @@
 export interface ICollectionDescription {
-    databaseName: string;
-    collectionName: string;
+    databaseName: string;        // The name of the database
+    collectionName: string;      // The name of the collection/table
 
-    documentsCount?: number;
-    documentsCountFrom?: number;
+    documentsCount?: number;     // How many documents/rows it should generate
+    documentsCountFrom?: number; // Rondom number for document cound (from & to required)
     documentsCountTo?: number;
 
-    isDocumentStatic?: boolean;
-    injectIntoStatic?: boolean;
+    isDocumentStatic?: boolean;  // Does this document contain static content (for example a country list)
+    injectIntoStatic?: boolean;  // Do you want to inject test data into the static content
 
-    documentDescription?: IDocumentFieldDescription [];
-    staticDocuments?: any [];
+    documentDescription?: IDocumentFieldDescription []; // Your schema for this document/table to generate data
+    staticDocuments?: any [];    // Array of static documents/rows
 }
 
 export interface IDefaultDocumentFieldDescription {

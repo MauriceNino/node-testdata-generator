@@ -110,15 +110,38 @@ var Generator = /** @class */ (function () {
             collectionName: collectionDescription.collectionName,
             documents: []
         };
-        for (var i = 0; i < collectionDescription.documentsCount; i++) {
+        var documentsCount = collectionDescription.isDocumentStatic ? collectionDescription.staticDocuments.length : collectionDescription.documentsCount;
+        for (var i = 0; i < documentsCount; i++) {
             var tempResultDocument = {
                 documentFields: []
             };
-            tempResultDocument.documentFields = Generator.generateFields(collectionDescription.documentDescription);
+            if (!collectionDescription.isDocumentStatic || (collectionDescription.isDocumentStatic && collectionDescription.injectIntoStatic)) {
+                tempResultDocument.documentFields = Generator.generateFields(collectionDescription.documentDescription);
+            }
+            if (collectionDescription.isDocumentStatic) {
+                tempResultDocument.documentFields = tempResultDocument.documentFields
+                    .concat(Generator.generateFieldFromStatic(collectionDescription.staticDocuments[i]));
+            }
             tempResultCollection.documents.push(tempResultDocument);
         }
         Generator.collectionGenerationFinished();
         return tempResultCollection;
+    };
+    Generator.generateFieldFromStatic = function (staticDocument) {
+        var tempFields = [];
+        for (var property in staticDocument) {
+            if (staticDocument.hasOwnProperty(property)) {
+                var tempField = {
+                    fieldName: property,
+                    fieldValue: staticDocument[property]
+                };
+                if (typeof tempField.fieldValue == "string" || tempField.fieldValue instanceof String) {
+                    tempField.fieldNeedsQuotations = true;
+                }
+                tempFields.push(tempField);
+            }
+        }
+        return tempFields;
     };
     Generator.generateFields = function (fieldDescriptions) {
         var tempResultFields = [];

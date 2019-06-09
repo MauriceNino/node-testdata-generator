@@ -122,12 +122,20 @@ export class Generator {
             documents: []
         }
 
-        for(let i=0; i<collectionDescription.documentsCount; i++) {
+        let documentsCount: number = collectionDescription.isDocumentStatic?collectionDescription.staticDocuments.length:collectionDescription.documentsCount;
+        for(let i=0; i<documentsCount; i++) {
             let tempResultDocument: IGeneratedDocument = {
                 documentFields: []
             }
 
-            tempResultDocument.documentFields = Generator.generateFields(collectionDescription.documentDescription);
+            if(!collectionDescription.isDocumentStatic || (collectionDescription.isDocumentStatic && collectionDescription.injectIntoStatic)) {
+                tempResultDocument.documentFields = Generator.generateFields(collectionDescription.documentDescription);
+            }
+
+            if(collectionDescription.isDocumentStatic) {
+                tempResultDocument.documentFields = tempResultDocument.documentFields
+                    .concat(Generator.generateFieldFromStatic(collectionDescription.staticDocuments[i]));
+            }
 
             tempResultCollection.documents.push(tempResultDocument);
         }
@@ -135,6 +143,27 @@ export class Generator {
         Generator.collectionGenerationFinished();
 
         return tempResultCollection;
+    }
+
+    public static generateFieldFromStatic(staticDocument: any): IGeneratedField[] {
+        let tempFields: IGeneratedField[] = [];
+
+        for (let property in staticDocument) {
+            if (staticDocument.hasOwnProperty(property)) {
+                let tempField: IGeneratedField = {
+                    fieldName: property,
+                    fieldValue: staticDocument[property]
+                };
+        
+                if(typeof tempField.fieldValue == "string" || tempField.fieldValue instanceof String) {
+                    tempField.fieldNeedsQuotations = true;
+                }
+                
+                tempFields.push(tempField);
+            }
+        }
+
+        return tempFields;
     }
 
     public static generateFields(fieldDescriptions: IDocumentFieldDescription []): IGeneratedField [] {
