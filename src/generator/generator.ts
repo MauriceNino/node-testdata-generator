@@ -6,35 +6,61 @@ var ObjectID = require('bson').ObjectID;
 /// <reference path="../../node_modules/@types/faker/index.d.ts"/>
 var faker: Faker.FakerStatic = require('faker');
 
+import sqlite3 from "sqlite3";
+import util from 'util';
+
 export class Generator {
     ////////////////////////////////////////
     // Generate the keys of testdata
     ////////////////////////////////////////
 
-    public static resolveCollectionKeys(generatedCollections: IGeneratedCollection[]): IGeneratedCollection[] {
-        let possibleKeys: Map<number, any[]> = new Map();
+    public static async resolveCollectionKeys(db: sqlite3.Database): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            let possibleKeys: Map<number, any[]> = new Map();
 
-        generatedCollections.forEach(c => {
-            c.documents.forEach(d => {
-                let tempKeys: Map<number, any[]> = Generator.findReferenceKeysInFields(d.documentFields);
-                tempKeys.forEach((val: any[], key: number) => {
-                    // If return map has no key with that number, just append it
-                    if(!possibleKeys.has(key)) {
-                        possibleKeys.set(key, val);
-                    } else {
-                        possibleKeys.set(key, possibleKeys.get(key).concat(val));
+
+            db.serialize(() => {
+                db.each("SELECT dbName, collectionName, value FROM temp_store", function(err, row) {
+                    let tempColl: IGeneratedCollection = {
+                        dbName: row.dbName,
+                        collectionName: row.collectionName,
+                        documents: JSON.parse(row.value)
                     }
-                })
+
+                    tempColl.documents.forEach(d => {
+                
+                        let tempKeys: Map<number, any[]> = Generator.findReferenceKeysInFields(d.documentFields);
+                        tempKeys.forEach((val: any[], key: number) => {
+                            // If return map has no key with that number, just append it
+                            if(!possibleKeys.has(key)) {
+                                possibleKeys.set(key, val);
+                            } else {
+                                possibleKeys.set(key, possibleKeys.get(key).concat(val));
+                            }
+                        })
+                    });
+                });
+            });
+            db.serialize(() => {
+                db.each("SELECT rowid AS id, dbName, collectionName, value FROM temp_store", (err, row) => {
+                    let tempColl: IGeneratedCollection = {
+                        dbName: row.dbName,
+                        collectionName: row.collectionName,
+                        documents: JSON.parse(row.value)
+                    }
+                    
+                    tempColl.documents.forEach(d => {
+                        d.documentFields = Generator.fillReferencesInFields(d.documentFields, possibleKeys);
+                    });
+
+                    let sql = `UPDATE temp_store SET value = '${JSON.stringify(tempColl.documents)}' WHERE rowid = ${row.id}`;
+                    
+                    db.exec(sql, (err) => {});
+                }, () => {
+                    resolve();
+                });
             });
         });
-
-        generatedCollections.forEach(c => {
-            c.documents.forEach(d => {
-                d.documentFields = Generator.fillReferencesInFields(d.documentFields, possibleKeys);
-            });
-        });
-
-        return generatedCollections;
     }
 
     private static fillReferencesInFields(fields: IGeneratedField[], possibleKeys: Map<number, any[]>): IGeneratedField[] {
@@ -115,23 +141,19 @@ export class Generator {
     // Generate the testdata
     ////////////////////////////////////////
 
-    public static parseCollectionDescriptions(collectionDescriptions: ICollectionDescription[]): IGeneratedCollection[] {
-        let resultCollections: IGeneratedCollection [] = [];
-
-        collectionDescriptions.forEach((collectionDescription: ICollectionDescription) => {
-            resultCollections.push(Generator.generateCollection(collectionDescription));
-        })
-
-        return resultCollections;
+    public static async parseCollectionDescriptions(collectionDescriptions: ICollectionDescription[], maxKeepInRam: number, db: sqlite3.Database): Promise<void> {
+        for(let i=0; i<collectionDescriptions.length; i++) {
+            await Generator.generateCollection(collectionDescriptions[i], maxKeepInRam, db);
+        }
     }
     
-    public static generateCollection(collectionDescription: ICollectionDescription): IGeneratedCollection {
+    public static async generateCollection(collectionDescription: ICollectionDescription, maxKeepInRam: number, db: sqlite3.Database): Promise<void> {
         let tempResultCollection: IGeneratedCollection = {
             dbName: collectionDescription.databaseName,
             collectionName: collectionDescription.collectionName,
             documents: []
         }
-
+        let generatedDocuments: number = 0;
         let documentsCount: number = collectionDescription.isDocumentStatic?collectionDescription.staticDocuments.length:collectionDescription.documentsCount;
         for(let i=0; i<documentsCount; i++) {
             let tempResultDocument: IGeneratedDocument = {
@@ -148,11 +170,26 @@ export class Generator {
             }
 
             tempResultCollection.documents.push(tempResultDocument);
+            generatedDocuments++;
+
+            if(generatedDocuments % maxKeepInRam == 0 && generatedDocuments != 0){
+                db.serialize(() => {
+                    var stmt = db.prepare("INSERT INTO temp_store (`dbName`, `collectionName`, `value`) VALUES (?, ?, ?)");
+                    stmt.run(tempResultCollection.dbName, tempResultCollection.collectionName, JSON.stringify(tempResultCollection.documents));
+                    tempResultCollection.documents = []
+                    stmt.finalize();
+                });
+            }
         }
 
-        Generator.collectionGenerationFinished();
+        db.serialize(() => {
+            var stmt = db.prepare("INSERT INTO temp_store (`dbName`, `collectionName`, `value`) VALUES (?, ?, ?)");
+            stmt.run(tempResultCollection.dbName, tempResultCollection.collectionName, JSON.stringify(tempResultCollection.documents));
+            tempResultCollection.documents = []
+            stmt.finalize();
+        });
 
-        return tempResultCollection;
+        Generator.collectionGenerationFinished();
     }
 
     public static generateFieldFromStatic(staticDocument: any): IGeneratedField[] {

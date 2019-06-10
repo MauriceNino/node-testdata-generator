@@ -2,28 +2,35 @@ import { CmdOpts, argsHandler, ICollectionDescription } from "../models/modelInp
 import { IGeneratedCollection } from "../models/modelGenerated";
 
 import fs from 'fs'
-import path from 'path'
+import path, { resolve } from 'path'
 import util from 'util';
 import { Generator } from "../generator/generator";
 import { Transformator } from "../transformator/transformator";
 
+import sqlite3 from "sqlite3";
+var db = new sqlite3.Database(':memory:');
+
 
 export class NodeTestdataGenerator {
-    public static doWork (opts: CmdOpts): any[] {
+    public static async doWork (opts: CmdOpts): Promise<any[]> {
         if(opts.createTemplate) NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
         else {
             let collectionDescriptions: ICollectionDescription[] = JSON.parse(NodeTestdataGenerator.readData(opts.schemaFile));
 
             if(collectionDescriptions.length == 0) NodeTestdataGenerator.printOutput("warn", "Input file is empty!");
 
-            let generatedCollections = Generator.parseCollectionDescriptions(collectionDescriptions);
-            generatedCollections = Generator.resolveCollectionKeys(generatedCollections);
+            let dbConnection = await NodeTestdataGenerator.initializeInMemoryDatabase();
 
-            return Transformator.transformTo(opts.outputFormat, generatedCollections, true);
+            await Generator.parseCollectionDescriptions(collectionDescriptions, 50, dbConnection);
+            await Generator.resolveCollectionKeys(dbConnection);
+
+            await Transformator.transformTo(opts.outputFormat, dbConnection);
+
+            return;
         }
     }
 
-    public static cmdDoWork (opts: CmdOpts): void {
+    public static async cmdDoWork (opts: CmdOpts): Promise<void> {
         if(opts.printHelp) NodeTestdataGenerator.printHelp();
         else if(opts.createTemplate) NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
         else {
@@ -31,29 +38,68 @@ export class NodeTestdataGenerator {
 
             if(collectionDescriptions.length == 0) NodeTestdataGenerator.printOutput("warn", "Input file is empty!");
 
-            let generatedCollections = Generator.parseCollectionDescriptions(collectionDescriptions);
-            generatedCollections = Generator.resolveCollectionKeys(generatedCollections);
+            let dbConnection = await NodeTestdataGenerator.initializeInMemoryDatabase();
 
-            let outputArr: string [];
-
-            outputArr = Transformator.transformTo(opts.outputFormat, generatedCollections);
+            await Generator.parseCollectionDescriptions(collectionDescriptions, 50, dbConnection);
+            await Generator.resolveCollectionKeys(dbConnection);
 
             if(opts.outputType == "cmd" && opts.outputFormat == "json") {
-                console.log(util.inspect(generatedCollections, false, null, true));
+                db.serialize(() => {
+                    db.each("SELECT dbName, collectionName, value FROM temp_store", function(err, row) {
+                        let tempColl: IGeneratedCollection = {
+                            dbName: row.dbName,
+                            collectionName: row.collectionName,
+                            documents: JSON.parse(row.value)
+                        }
+                        console.log(util.inspect(tempColl, false, null, true));
+                    });
+                });
             } else {
+                await Transformator.transformTo(opts.outputFormat, dbConnection);
+
                 switch(opts.outputType) {
                     case "cmd":
-                        //console.log(util.inspect(generatedCollections, false, null, true));
-                        outputArr.forEach(el => console.log(el));
+                        db.serialize(() => {
+                            db.each("SELECT value FROM temp_out", (err, row) => {
+                                console.log(row.value);
+                            });
+                        });
                         break;
                     case "file":
-                        NodeTestdataGenerator.writeToFile(opts.outputFilename, outputArr.join("\n"));
+                        db.serialize(() => {
+                            db.each("SELECT value FROM temp_out", (err, row) => {
+                                NodeTestdataGenerator.appendToFile(opts.outputFilename, row.value)
+                            });
+                        });
                         break;
                     default:
                         throw new Error(`Output Type '${opts.outputType}' is not allowed. Check '--help' for help`);
                 }
             }
         }
+
+        //await NodeTestdataGenerator.destroyInMemoryDatabase();
+    }
+
+    private static async initializeInMemoryDatabase(): Promise<sqlite3.Database> {
+        return new Promise<sqlite3.Database>((resolve, reject) => {
+            db.serialize(() => {
+                db.run("CREATE TABLE temp_store (dbName TEXT, collectionName TEXT, value JSON)", () => {
+                    db.run("CREATE TABLE temp_out (value TEXT)", () => {
+                        resolve(db);
+                    });
+                });
+            });
+        });
+    }
+    
+
+    private static async destroyInMemoryDatabase() {
+        return new Promise<sqlite3.Database>((resolve, reject) => {
+            db.close(() => {
+                resolve();
+            });
+        });
     }
 
     static writeTemplateToFile(fileName: string): void {
@@ -83,6 +129,10 @@ export class NodeTestdataGenerator {
         fs.writeFileSync(fileName, content);
 
         NodeTestdataGenerator.printOutput("output", "Content written to file");
+    }
+
+    static appendToFile(fileName: string, content: string): void {
+        fs.appendFileSync(fileName, content);
     }
     
     static createFile(fileName: string): number {

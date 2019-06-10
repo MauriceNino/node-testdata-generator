@@ -1,109 +1,133 @@
 import { IGeneratedCollection, IGeneratedField } from "../models/modelGenerated";
 
+import sqlite3 from "sqlite3";
 export class Transformator {
 
-    public static transformTo(outputFormat: string, generatedCollections: IGeneratedCollection[], keepJson: boolean = false): any[] {
-
-        let outputArr: string [];
+    public static async transformTo(outputFormat: string, db: sqlite3.Database): Promise<void> {
         switch (outputFormat) {
             case "json":
-                if(keepJson)
-                    return generatedCollections;
-                else
-                    outputArr = JSON.stringify(generatedCollections).split("\n");
+                //JSON.stringify(generatedCollections).split("\n");
                 break;
             case "sql":
-                outputArr = Transformator.transformToSQL(generatedCollections);
+                await Transformator.transformToSQL(db);
                 break;
             case "mongodb":
-                outputArr = Transformator.transformToMongo(generatedCollections, 1);
+                await Transformator.transformToMongo(db, 1);
                 break;
             default:
                 throw new Error(`Output format '${outputFormat}' is not allowed. Check '--help' for help`);
         }
-        return outputArr;
     }
 
-    public static transformToSQL(collections: IGeneratedCollection[]): string [] {
-        let resultArr: string[] = [];
-
-        collections.forEach(collection => {
-
-            collection.documents.forEach(document => {
-                let singleInsert: string = `INSERT INTO ${collection.dbName}.${collection.collectionName} (`;
-                let isFirst: boolean = true;
-                document.documentFields.forEach(f => {
-                    if(isFirst) isFirst = false;
-                    else singleInsert += ", ";
-
-                    singleInsert += f.fieldName;
-                })
-
-                singleInsert += ") VALUES (";
-
-                isFirst = true;
-                document.documentFields.forEach(f => {
-                    if(isFirst) isFirst = false;
-                    else singleInsert += ", ";
-
-                    singleInsert += f.fieldNeedsQuotations?"'":"";
-                    singleInsert += f.fieldValue;
-                    singleInsert += f.fieldNeedsQuotations?"'":"";
-                })
-                singleInsert+=");";
-                resultArr.push(singleInsert);
-            })
-
-        })
-
-        return resultArr;
-    }
-    
-    public static transformToMongo(collections: IGeneratedCollection[], bulkinsertMax: number): string [] {
-        let resultArr: string[] = [];
-
-        collections.forEach(collection => {
-            let singleInsert: string = `${collection.dbName}.${collection.collectionName}.insert(`;
-
-            let isFirstDoc: boolean = true;
-            collection.documents.forEach((document, index) => {
-                if(index % bulkinsertMax == 0 && index != 0 && index < collection.documents.length) {
-                    singleInsert += ");";
-                    resultArr.push(singleInsert);
-
-                    singleInsert = `${collection.dbName}.${collection.collectionName}.insert(`;
-
-                    isFirstDoc = true;
-                }
-                
-                if(isFirstDoc) isFirstDoc = false;
-                else singleInsert += ", ";
-
-                singleInsert += "{";
-
-                let isFirstField: boolean = true;
-                document.documentFields.forEach(f => {
-                    let field: string = Transformator.transforSingleMongoField(f);
-
-                    if(field != null) {
-                        if(isFirstField) isFirstField = false;
-                        else singleInsert += ", ";
-    
-                        singleInsert += Transformator.transforSingleMongoField(f);
+    public static async transformToSQL(db: sqlite3.Database): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            db.serialize(() => {
+                db.each("SELECT dbName, collectionName, value FROM temp_store", (err, row) => {
+                    let tempColl: IGeneratedCollection = {
+                        dbName: row.dbName,
+                        collectionName: row.collectionName,
+                        documents: JSON.parse(row.value)
                     }
-                })
+                    
+                    tempColl.documents.forEach(d => {
+                        let singleInsert: string = `INSERT INTO ${tempColl.dbName}.${tempColl.collectionName} (`;
+                        let isFirst: boolean = true;
+                        d.documentFields.forEach(f => {
+                            if(isFirst) isFirst = false;
+                            else singleInsert += ", ";
 
-                singleInsert += "}";
+                            singleInsert += f.fieldName;
+                        })
 
-            })
+                        singleInsert += ") VALUES (";
 
-            singleInsert+=");";
-            resultArr.push(singleInsert);
-        })
-        return resultArr;
+                        isFirst = true;
+                        d.documentFields.forEach(f => {
+                            if(isFirst) isFirst = false;
+                            else singleInsert += ", ";
+
+                            singleInsert += f.fieldNeedsQuotations?"'":"";
+                            singleInsert += f.fieldValue;
+                            singleInsert += f.fieldNeedsQuotations?"'":"";
+                        })
+                        singleInsert+=");";
+                        
+                        db.serialize(() => {
+                            var stmt = db.prepare("INSERT INTO temp_out (`value`) VALUES (?)");
+                            stmt.run(singleInsert);
+                            stmt.finalize();
+                        });
+                    });
+                }, () => {
+                    resolve();
+                });
+            });
+        });
+    }
+    
+    public static async transformToMongo(db: sqlite3.Database, bulkinsertMax: number): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            db.serialize(() => {
+                db.each("SELECT dbName, collectionName, value FROM temp_store", (err, row) => {
+                    let tempColl: IGeneratedCollection = {
+                        dbName: row.dbName,
+                        collectionName: row.collectionName,
+                        documents: JSON.parse(row.value)
+                    }
+
+                    let singleInsert: string = `${tempColl.dbName}.${tempColl.collectionName}.insert(`;
+
+                    let isFirstDoc: boolean = true;
+                    tempColl.documents.forEach((document, index) => {
+                        if(index % bulkinsertMax == 0 && index != 0 && index < tempColl.documents.length) {
+                            singleInsert += ");";
+                            Transformator.insertSingleInsert(db, singleInsert);
+
+                            singleInsert = `${tempColl.dbName}.${tempColl.collectionName}.insert(`;
+
+                            isFirstDoc = true;
+                        }
+                        
+                        if(isFirstDoc) isFirstDoc = false;
+                        else singleInsert += ", ";
+
+                        singleInsert += "{";
+
+                        let isFirstField: boolean = true;
+                        document.documentFields.forEach(f => {
+                            let field: string = Transformator.transformSingleMongoField(f);
+
+                            if(field != null) {
+                                if(isFirstField) isFirstField = false;
+                                else singleInsert += ", ";
+            
+                                singleInsert += Transformator.transformSingleMongoField(f);
+                            }
+                        })
+
+                        singleInsert += "}";
+
+                    });
+
+                    singleInsert+=");";
+                        
+                    Transformator.insertSingleInsert(db, singleInsert);
+                }, () => {
+                    resolve();
+                });
+            });
+        });
     }
 
-    private static transforSingleMongoField(field: IGeneratedField): string {
+    private static insertSingleInsert(db: sqlite3.Database, singleInsert: string) {
+        db.serialize(() => {
+            var stmt = db.prepare("INSERT INTO temp_out (`value`) VALUES ($stuff)");
+            stmt.run({$stuff: singleInsert});
+            stmt.finalize();
+        });
+    }
+
+    private static transformSingleMongoField(field: IGeneratedField): string {
         if(field.fieldIsObject) {
             let isFirst: boolean = true;
             let returnStr: string = `"${field.fieldName}": {`;
@@ -111,7 +135,7 @@ export class Transformator {
                 if(isFirst) isFirst = false;
                 else returnStr += ", ";
 
-                returnStr += Transformator.transforSingleMongoField(f);
+                returnStr += Transformator.transformSingleMongoField(f);
             })
             
             returnStr += "}";
@@ -133,7 +157,7 @@ export class Transformator {
                 arrField.forEach((arrField: any) => {
                     if(isFirstObj) isFirstObj = false;
                     else returnStr += ", "
-                    returnStr += Transformator.transforSingleMongoField(arrField);
+                    returnStr += Transformator.transformSingleMongoField(arrField);
                 })
                 returnStr += "}";
             });
