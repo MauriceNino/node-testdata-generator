@@ -2,8 +2,15 @@
     {
         "databaseName": "db",
         "collectionName": "users",
-        "documentsCount": 1,
+        "documentsCount": 3,
         "documentDescription": [
+            
+            {
+                "fieldName": "_id",
+                "type": "objectId",
+                "nullPercentage": 0,
+                "referenceKey": 0
+            },
             {
                 "fieldName": "userSecret",
                 "type": "string",
@@ -176,6 +183,13 @@
                 "namespaceName": "name",
                 "methodName": "findName",
                 "nullPercentage": 50
+            },
+            
+            {
+                "fieldName": "bestFriend",
+                "type": "referenceTo",
+                "nullPercentage": 0,
+                "referenceTo": 0
             }
         ]
     }
