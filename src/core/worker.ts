@@ -7,35 +7,36 @@ import util from 'util';
 import { Generator } from "../generator/generator";
 import { Transformator } from "../transformator/transformator";
 
-export class Worker {
-    constructor () {}
 
-    public static doWork (opts: CmdOpts): void {
-        if(opts.printHelp) Worker.printHelp();
-        else if(opts.createTemplate) Worker.writeTemplateToFile(opts.outputFilename);
+export class NodeTestdataGenerator {
+    public static doWork (opts: CmdOpts): any[] {
+        if(opts.createTemplate) NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
         else {
-            let collectionDescriptions: ICollectionDescription[] = JSON.parse(Worker.readData(opts.schemaFile));
+            let collectionDescriptions: ICollectionDescription[] = JSON.parse(NodeTestdataGenerator.readData(opts.schemaFile));
 
-            if(collectionDescriptions.length == 0) Worker.printOutput("warn", "Input file is empty!");
+            if(collectionDescriptions.length == 0) NodeTestdataGenerator.printOutput("warn", "Input file is empty!");
 
-            let generatedCollections = Worker.parseCollectionDescriptions(collectionDescriptions);
+            let generatedCollections = Generator.parseCollectionDescriptions(collectionDescriptions);
+            generatedCollections = Generator.resolveCollectionKeys(generatedCollections);
+
+            return Transformator.transformTo(opts.outputFormat, generatedCollections, true);
+        }
+    }
+
+    public static cmdDoWork (opts: CmdOpts): void {
+        if(opts.printHelp) NodeTestdataGenerator.printHelp();
+        else if(opts.createTemplate) NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
+        else {
+            let collectionDescriptions: ICollectionDescription[] = JSON.parse(NodeTestdataGenerator.readData(opts.schemaFile));
+
+            if(collectionDescriptions.length == 0) NodeTestdataGenerator.printOutput("warn", "Input file is empty!");
+
+            let generatedCollections = Generator.parseCollectionDescriptions(collectionDescriptions);
             generatedCollections = Generator.resolveCollectionKeys(generatedCollections);
 
             let outputArr: string [];
 
-            switch(opts.outputFormat) {
-                case "json":
-                    outputArr = JSON.stringify(generatedCollections).split("\n");
-                    break;
-                case "sql":
-                    outputArr = Transformator.transformToSQL(generatedCollections);
-                    break;
-                case "mongodb":
-                    outputArr = Transformator.transformToMongo(generatedCollections, 1);
-                    break;
-                default: 
-                    throw new Error(`Output format '${opts.outputFormat}' is not allowed. Check '--help' for help`);
-            }
+            outputArr = Transformator.transformTo(opts.outputFormat, generatedCollections);
 
             if(opts.outputType == "cmd" && opts.outputFormat == "json") {
                 console.log(util.inspect(generatedCollections, false, null, true));
@@ -46,23 +47,13 @@ export class Worker {
                         outputArr.forEach(el => console.log(el));
                         break;
                     case "file":
-                        Worker.writeToFile(opts.outputFilename, outputArr.join("\n"));
+                        NodeTestdataGenerator.writeToFile(opts.outputFilename, outputArr.join("\n"));
                         break;
                     default:
                         throw new Error(`Output Type '${opts.outputType}' is not allowed. Check '--help' for help`);
                 }
             }
         }
-    }
-
-    public static parseCollectionDescriptions(collectionDescriptions: ICollectionDescription[]): IGeneratedCollection[] {
-        let resultCollections: IGeneratedCollection [] = [];
-
-        collectionDescriptions.forEach((collectionDescription: ICollectionDescription) => {
-            resultCollections.push(Generator.generateCollection(collectionDescription));
-        })
-
-        return resultCollections;
     }
 
     static writeTemplateToFile(fileName: string): void {
@@ -85,13 +76,13 @@ export class Worker {
 
         fs.writeFileSync(fileName, template);
 
-        Worker.printOutput("output", "Template written to file");
+        NodeTestdataGenerator.printOutput("output", "Template written to file");
     }
 
     static writeToFile(fileName: string, content: string): void {
         fs.writeFileSync(fileName, content);
 
-        Worker.printOutput("output", "Content written to file");
+        NodeTestdataGenerator.printOutput("output", "Content written to file");
     }
     
     static createFile(fileName: string): number {
@@ -117,7 +108,7 @@ export class Worker {
         ]
         console.log(`[ \x1b[33mCommand Details\x1b[0m ]`);
         //@ts-ignore
-        let groupedHelp: Map<string, any[]> = Worker.groupArrayBy(argsHandler, x => x.group);
+        let groupedHelp: Map<string, any[]> = NodeTestdataGenerator.groupArrayBy(argsHandler, x => x.group);
         
         groupedHelp.forEach((g)=>{
             console.log(`[ \x1b[33m${g[0].group}\x1b[0m ]`);

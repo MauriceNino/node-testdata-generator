@@ -1,6 +1,29 @@
 import { IGeneratedCollection, IGeneratedField } from "../models/modelGenerated";
 
 export class Transformator {
+
+    public static transformTo(outputFormat: string, generatedCollections: IGeneratedCollection[], keepJson: boolean = false): any[] {
+
+        let outputArr: string [];
+        switch (outputFormat) {
+            case "json":
+                if(keepJson)
+                    return generatedCollections;
+                else
+                    outputArr = JSON.stringify(generatedCollections).split("\n");
+                break;
+            case "sql":
+                outputArr = Transformator.transformToSQL(generatedCollections);
+                break;
+            case "mongodb":
+                outputArr = Transformator.transformToMongo(generatedCollections, 1);
+                break;
+            default:
+                throw new Error(`Output format '${outputFormat}' is not allowed. Check '--help' for help`);
+        }
+        return outputArr;
+    }
+
     public static transformToSQL(collections: IGeneratedCollection[]): string [] {
         let resultArr: string[] = [];
 

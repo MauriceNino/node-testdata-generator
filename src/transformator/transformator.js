@@ -3,6 +3,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var Transformator = /** @class */ (function () {
     function Transformator() {
     }
+    Transformator.transformTo = function (outputFormat, generatedCollections, keepJson) {
+        if (keepJson === void 0) { keepJson = false; }
+        var outputArr;
+        switch (outputFormat) {
+            case "json":
+                if (keepJson)
+                    return generatedCollections;
+                else
+                    outputArr = JSON.stringify(generatedCollections).split("\n");
+                break;
+            case "sql":
+                outputArr = Transformator.transformToSQL(generatedCollections);
+                break;
+            case "mongodb":
+                outputArr = Transformator.transformToMongo(generatedCollections, 1);
+                break;
+            default:
+                throw new Error("Output format '" + outputFormat + "' is not allowed. Check '--help' for help");
+        }
+        return outputArr;
+    };
     Transformator.transformToSQL = function (collections) {
         var resultArr = [];
         collections.forEach(function (collection) {

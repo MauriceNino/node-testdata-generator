@@ -33,6 +33,6 @@ function main(args) {
     if (opts.writeToDatabase && (opts.databaseHost === undefined || opts.databasePort === undefined)) {
         throw new Error("You cant write a templete file and an output file simultaniously!");
     }
-    worker_1.Worker.doWork(opts);
+    worker_1.NodeTestdataGenerator.cmdDoWork(opts);
 }
 main(args);

@@ -9,34 +9,34 @@ var path_1 = __importDefault(require("path"));
 var util_1 = __importDefault(require("util"));
 var generator_1 = require("../generator/generator");
 var transformator_1 = require("../transformator/transformator");
-var Worker = /** @class */ (function () {
-    function Worker() {
+var NodeTestdataGenerator = /** @class */ (function () {
+    function NodeTestdataGenerator() {
     }
-    Worker.doWork = function (opts) {
-        if (opts.printHelp)
-            Worker.printHelp();
-        else if (opts.createTemplate)
-            Worker.writeTemplateToFile(opts.outputFilename);
+    NodeTestdataGenerator.doWork = function (opts) {
+        if (opts.createTemplate)
+            NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
         else {
-            var collectionDescriptions = JSON.parse(Worker.readData(opts.schemaFile));
+            var collectionDescriptions = JSON.parse(NodeTestdataGenerator.readData(opts.schemaFile));
             if (collectionDescriptions.length == 0)
-                Worker.printOutput("warn", "Input file is empty!");
-            var generatedCollections = Worker.parseCollectionDescriptions(collectionDescriptions);
+                NodeTestdataGenerator.printOutput("warn", "Input file is empty!");
+            var generatedCollections = generator_1.Generator.parseCollectionDescriptions(collectionDescriptions);
+            generatedCollections = generator_1.Generator.resolveCollectionKeys(generatedCollections);
+            return transformator_1.Transformator.transformTo(opts.outputFormat, generatedCollections, true);
+        }
+    };
+    NodeTestdataGenerator.cmdDoWork = function (opts) {
+        if (opts.printHelp)
+            NodeTestdataGenerator.printHelp();
+        else if (opts.createTemplate)
+            NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
+        else {
+            var collectionDescriptions = JSON.parse(NodeTestdataGenerator.readData(opts.schemaFile));
+            if (collectionDescriptions.length == 0)
+                NodeTestdataGenerator.printOutput("warn", "Input file is empty!");
+            var generatedCollections = generator_1.Generator.parseCollectionDescriptions(collectionDescriptions);
             generatedCollections = generator_1.Generator.resolveCollectionKeys(generatedCollections);
             var outputArr = void 0;
-            switch (opts.outputFormat) {
-                case "json":
-                    outputArr = JSON.stringify(generatedCollections).split("\n");
-                    break;
-                case "sql":
-                    outputArr = transformator_1.Transformator.transformToSQL(generatedCollections);
-                    break;
-                case "mongodb":
-                    outputArr = transformator_1.Transformator.transformToMongo(generatedCollections, 1);
-                    break;
-                default:
-                    throw new Error("Output format '" + opts.outputFormat + "' is not allowed. Check '--help' for help");
-            }
+            outputArr = transformator_1.Transformator.transformTo(opts.outputFormat, generatedCollections);
             if (opts.outputType == "cmd" && opts.outputFormat == "json") {
                 console.log(util_1.default.inspect(generatedCollections, false, null, true));
             }
@@ -47,7 +47,7 @@ var Worker = /** @class */ (function () {
                         outputArr.forEach(function (el) { return console.log(el); });
                         break;
                     case "file":
-                        Worker.writeToFile(opts.outputFilename, outputArr.join("\n"));
+                        NodeTestdataGenerator.writeToFile(opts.outputFilename, outputArr.join("\n"));
                         break;
                     default:
                         throw new Error("Output Type '" + opts.outputType + "' is not allowed. Check '--help' for help");
@@ -55,30 +55,23 @@ var Worker = /** @class */ (function () {
             }
         }
     };
-    Worker.parseCollectionDescriptions = function (collectionDescriptions) {
-        var resultCollections = [];
-        collectionDescriptions.forEach(function (collectionDescription) {
-            resultCollections.push(generator_1.Generator.generateCollection(collectionDescription));
-        });
-        return resultCollections;
-    };
-    Worker.writeTemplateToFile = function (fileName) {
+    NodeTestdataGenerator.writeTemplateToFile = function (fileName) {
         var template = "[\n    {\n        \"databaseName\": \"db\",\n        \"collectionName\": \"test\",\n        \"size\": 100,\n        \"documentDescription\": {\n            \"testDocField\": {\n                \"type\": \"string\",\n                \"nullPercentage\": 0,\n                \"id\": 0,\n                \"lengthFrom\": 0,\n                \"lengthTo\": 10\n            }\n        }\n    }\n]";
         fs_1.default.writeFileSync(fileName, template);
-        Worker.printOutput("output", "Template written to file");
+        NodeTestdataGenerator.printOutput("output", "Template written to file");
     };
-    Worker.writeToFile = function (fileName, content) {
+    NodeTestdataGenerator.writeToFile = function (fileName, content) {
         fs_1.default.writeFileSync(fileName, content);
-        Worker.printOutput("output", "Content written to file");
+        NodeTestdataGenerator.printOutput("output", "Content written to file");
     };
-    Worker.createFile = function (fileName) {
+    NodeTestdataGenerator.createFile = function (fileName) {
         return fs_1.default.openSync(fileName, 'w');
     };
-    Worker.readData = function (fileName) {
+    NodeTestdataGenerator.readData = function (fileName) {
         var buffer = fs_1.default.readFileSync(path_1.default.join(process.cwd(), fileName));
         return buffer.toString();
     };
-    Worker.printHelp = function () {
+    NodeTestdataGenerator.printHelp = function () {
         console.log("[ \u001B[33mBasic Usage\u001B[0m ]");
         console.log("  \u001B[32mindex.js --createTemplate --fileName=template.json\u001B[0m         Generates basic template and writes it to template.json");
         console.log("  \u001B[32mindex.js --schema=template.json --of=JSON --f=result.json\u001B[0m  Generates test data from template.json and writes it to result.json in JSON format");
@@ -91,7 +84,7 @@ var Worker = /** @class */ (function () {
         ];
         console.log("[ \u001B[33mCommand Details\u001B[0m ]");
         //@ts-ignore
-        var groupedHelp = Worker.groupArrayBy(modelInput_1.argsHandler, function (x) { return x.group; });
+        var groupedHelp = NodeTestdataGenerator.groupArrayBy(modelInput_1.argsHandler, function (x) { return x.group; });
         groupedHelp.forEach(function (g) {
             console.log("[ \u001B[33m" + g[0].group + "\u001B[0m ]");
             g.forEach(function (argsHandle) {
@@ -103,7 +96,7 @@ var Worker = /** @class */ (function () {
             console.log("");
         });
     };
-    Worker.groupArrayBy = function (arr, grouper) {
+    NodeTestdataGenerator.groupArrayBy = function (arr, grouper) {
         var map = new Map();
         arr.forEach(function (item) {
             var key = grouper(item);
@@ -117,7 +110,7 @@ var Worker = /** @class */ (function () {
         });
         return map;
     };
-    Worker.printOutput = function (loglevel, text) {
+    NodeTestdataGenerator.printOutput = function (loglevel, text) {
         if (loglevel == "output")
             console.log("\u001B[0m[ \u001B[32mOutput\u001B[0m ]  " + text);
         if (loglevel == "info")
@@ -127,6 +120,6 @@ var Worker = /** @class */ (function () {
         if (loglevel == "error")
             console.log("\u001B[0m[ \u001B[31mError\u001B[0m ]  " + text);
     };
-    return Worker;
+    return NodeTestdataGenerator;
 }());
-exports.Worker = Worker;
+exports.NodeTestdataGenerator = NodeTestdataGenerator;

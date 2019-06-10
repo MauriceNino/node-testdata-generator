@@ -1,5 +1,5 @@
 import { CmdOpts, argsHandler } from "./models/modelInput";
-import { Worker } from "./core/worker";
+import { NodeTestdataGenerator } from "./core/worker";
 
 const cmdOpts = process.argv;
 const nodePath = cmdOpts[0];
@@ -45,7 +45,7 @@ function main(args: string[]) {
         throw new Error(`You cant write a templete file and an output file simultaniously!`);
     }
 
-    Worker.doWork(opts);
+    NodeTestdataGenerator.cmdDoWork(opts);
 }
 
 main(args);

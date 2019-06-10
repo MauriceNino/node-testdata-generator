@@ -104,6 +104,13 @@ var Generator = /** @class */ (function () {
     ////////////////////////////////////////
     // Generate the testdata
     ////////////////////////////////////////
+    Generator.parseCollectionDescriptions = function (collectionDescriptions) {
+        var resultCollections = [];
+        collectionDescriptions.forEach(function (collectionDescription) {
+            resultCollections.push(Generator.generateCollection(collectionDescription));
+        });
+        return resultCollections;
+    };
     Generator.generateCollection = function (collectionDescription) {
         var tempResultCollection = {
             dbName: collectionDescription.databaseName,

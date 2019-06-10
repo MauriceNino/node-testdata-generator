@@ -114,6 +114,16 @@ export class Generator {
     ////////////////////////////////////////
     // Generate the testdata
     ////////////////////////////////////////
+
+    public static parseCollectionDescriptions(collectionDescriptions: ICollectionDescription[]): IGeneratedCollection[] {
+        let resultCollections: IGeneratedCollection [] = [];
+
+        collectionDescriptions.forEach((collectionDescription: ICollectionDescription) => {
+            resultCollections.push(Generator.generateCollection(collectionDescription));
+        })
+
+        return resultCollections;
+    }
     
     public static generateCollection(collectionDescription: ICollectionDescription): IGeneratedCollection {
         let tempResultCollection: IGeneratedCollection = {
