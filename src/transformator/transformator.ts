@@ -22,7 +22,7 @@ export class Transformator {
     public static async transformToSQL(db: sqlite3.Database): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             db.serialize(() => {
-                db.each("SELECT dbName, collectionName, value FROM temp_store", (err, row) => {
+                db.each("SELECT rowid as id, dbName, collectionName, value FROM temp_store", (err, row) => {
                     let tempColl: IGeneratedCollection = {
                         dbName: row.dbName,
                         collectionName: row.collectionName,
@@ -53,6 +53,7 @@ export class Transformator {
                         singleInsert+=");";
                         
                         Transformator.insertSingleInsert(db, singleInsert);
+                        Transformator.deleteRow(db, row.id);
                     });
                 }, () => {
                     resolve();
@@ -65,7 +66,7 @@ export class Transformator {
         return new Promise<void>((resolve, reject) => {
             db.serialize(() => {
                 //TODO: Remove row on done (free up ram)
-                db.each("SELECT dbName, collectionName, value FROM temp_store", (err, row) => {
+                db.each("SELECT rowid as id, dbName, collectionName, value FROM temp_store", (err, row) => {
                     let tempColl: IGeneratedCollection = {
                         dbName: row.dbName,
                         collectionName: row.collectionName,
@@ -109,6 +110,7 @@ export class Transformator {
                     singleInsert+=");";
                         
                     Transformator.insertSingleInsert(db, singleInsert);
+                    Transformator.deleteRow(db, row.id);
                 }, () => {
                     resolve();
                 });
@@ -122,6 +124,12 @@ export class Transformator {
             stmt.run({$stuff: singleInsert});
             stmt.finalize();
         });
+    }
+
+    private static deleteRow(db: sqlite3.Database, rowId: number) {
+        var stmt = db.prepare("DELETE FROM temp_store WHERE rowid = $id");
+        stmt.run({ $id: rowId });
+        stmt.finalize();
     }
 
     private static transformSingleMongoField(field: IGeneratedField): string {
