@@ -2,7 +2,7 @@
     {
         "databaseName": "db",
         "collectionName": "users",
-        "documentsCount": 100,
+        "documentsCount": 10000,
         "documentDescription": [
             {
                 "fieldName": "_id",
@@ -462,7 +462,7 @@
     {
         "databaseName": "db",
         "collectionName": "activeSearches",
-        "documentsCount": 500,
+        "documentsCount": 50000,
         "documentDescription": [
             {
                 "fieldName": "_id",
@@ -537,8 +537,8 @@
             {
                 "fieldName": "chatMessages",
                 "type": "array",
-                "sizeFrom": 30,
-                "sizeTo": 50,
+                "sizeFrom": 300,
+                "sizeTo": 5000,
                 "subDocumentDescriptions": [
                     {
                         "fieldName": "sender",
@@ -586,7 +586,7 @@
     {
         "databaseName": "db",
         "collectionName": "passiveSearches",
-        "documentsCount": 100,
+        "documentsCount": 1000,
         "documentDescription": [
             {
                 "fieldName": "_id",
@@ -691,7 +691,7 @@
     {
         "databaseName": "db",
         "collectionName": "privateChats",
-        "documentsCount": 400,
+        "documentsCount": 40000,
         "documentDescription": [
             {
                 "fieldName": "_id",

@@ -2,7 +2,21 @@
   "name": "node-testdata-generator",
   "version": "1.0.0",
   "description": "Generates testdata with a schema that is read from a file.",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "publish": "npm run build && npm publish --access=public",
+    "publish:private": "npm run build && npm publish --access=private",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "test": "test"
+  },
+  "bin": {
+    "node-testdata-generator": "dist/index.js"
+  },
   "dependencies": {
     "@types/faker": "^4.1.5",
     "@types/node": "^12.0.7",
@@ -13,9 +27,6 @@
     "sqlite3": "^4.0.8"
   },
   "devDependencies": {},
-  "scripts": {
-    "test": "test"
-  },
   "keywords": [
     "node",
     "mongodb",
@@ -24,5 +35,13 @@
     "helpme"
   ],
   "author": "Maurice el-Banna",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MauriceNino/node-testdata-generator"
+  },
+  "bugs": {
+    "url": "https://github.com/MauriceNino/node-testdata-generator/issues"
+  },
+  "homepage": "https://github.com/MauriceNino/node-testdata-generator/blob/master/README.md",
   "license": "MIT"
 }

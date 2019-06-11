@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 import { CmdOpts, argsHandler } from "./models/modelInput";
 import { NodeTestdataGenerator } from "./core/worker";
 
@@ -49,3 +51,5 @@ function main(args: string[]) {
 }
 
 main(args);
+
+module.exports = NodeTestdataGenerator;

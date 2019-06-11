@@ -67,11 +67,12 @@ It kinda works like in the command line, but you have to put in the parameters m
 
 First of all, install the package in your project like this:
 
-    npm install --save @mauricenino/node-testdata-generator
+    npm install --save node-testdata-generator
     
 And then import it like this:
 
-    import { NodeTestdataGenerator } from  "@mauricenino/node-testdata-generator/src/core";
+    import { NodeTestdataGenerator } from 'node-testdata-generator/dist/core/worker';
+    import { CmdOpts } from 'node-testdata-generator/dist/models/modelInput';
     
 After that you can call it like so:
 
@@ -81,6 +82,9 @@ After that you can call it like so:
     
     NodeTestdataGenerator.doWork(opts).then((dataHandle) => {
 		// Query through the dataHandle (data is shipped asynchronously due to potential RAM leak)
+
+        // After you are done, destroy the in memory database to free up resources
+        NodeTestdataGenerator.destroyInMemoryDatabase();
 	});
 
 # Schema file configuration

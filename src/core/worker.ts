@@ -9,8 +9,7 @@ import { Transformator } from "../transformator/transformator";
 
 import sqlite3 from "sqlite3";
 var db = new sqlite3.Database(':memory:');
-
-
+  
 export class NodeTestdataGenerator {
     public static async doWork (opts: CmdOpts): Promise<any[]> {
         if(opts.createTemplate) NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
@@ -94,7 +93,7 @@ export class NodeTestdataGenerator {
     }
     
 
-    private static async destroyInMemoryDatabase() {
+    public static async destroyInMemoryDatabase() {
         return new Promise<sqlite3.Database>((resolve, reject) => {
             db.close(() => {
                 resolve();
@@ -102,7 +101,7 @@ export class NodeTestdataGenerator {
         });
     }
 
-    static writeTemplateToFile(fileName: string): void {
+    private static writeTemplateToFile(fileName: string): void {
         const template: string = `[
     {
         "databaseName": "db",
@@ -125,31 +124,31 @@ export class NodeTestdataGenerator {
         NodeTestdataGenerator.printOutput("output", "Template written to file");
     }
 
-    static writeToFile(fileName: string, content: string): void {
+    private static writeToFile(fileName: string, content: string): void {
         fs.writeFileSync(fileName, content);
 
         NodeTestdataGenerator.printOutput("output", "Content written to file");
     }
 
-    static appendToFile(fileName: string, content: string): void {
+    private static appendToFile(fileName: string, content: string): void {
         fs.appendFileSync(fileName, content);
     }
     
-    static createFile(fileName: string): number {
+    private static createFile(fileName: string): number {
         return fs.openSync(fileName, 'w');
     }
 
-    static readData(fileName: string): string {
+    private static readData(fileName: string): string {
         var buffer = fs.readFileSync(path.join(process.cwd(), fileName));
         return buffer.toString();
     }
 
     private static printHelp (): void {
         console.log(`[ \x1b[33mBasic Usage\x1b[0m ]`);
-        console.log(`  \x1b[32mindex.js --createTemplate --fileName=template.json\x1b[0m         Generates basic template and writes it to template.json`);
-        console.log(`  \x1b[32mindex.js --schema=template.json --of=JSON --f=result.json\x1b[0m  Generates test data from template.json and writes it to result.json in JSON format`);
-        console.log(`  \x1b[32mindex.js --schema=template.json --of=SQL --f=result.json\x1b[0m   Generates test data from template.json and writes it to result.json in SQL format`);
-        console.log(`  \x1b[32mindex.js --schema=template.json --db\x1b[0m                       Generates test data from template.json and writes it directly into the MongoDB`);
+        console.log(`  \x1b[32mnode-testdata-generator --createTemplate --fileName=template.json\x1b[0m         Generates basic template and writes it to template.json`);
+        console.log(`  \x1b[32mnode-testdata-generator --schema=template.json --of=JSON --f=result.json\x1b[0m  Generates test data from template.json and writes it to result.json in JSON format`);
+        console.log(`  \x1b[32mnode-testdata-generator --schema=template.json --of=SQL --f=result.json\x1b[0m   Generates test data from template.json and writes it to result.json in SQL format`);
+        console.log(`  \x1b[32mnode-testdata-generator --schema=template.json --db\x1b[0m                       Generates test data from template.json and writes it directly into the MongoDB`);
         console.log(``);
         
         const maxes: number [] = [
@@ -187,7 +186,7 @@ export class NodeTestdataGenerator {
         return map;
     }
 
-    static printOutput (loglevel: string, text: string) {
+    private static printOutput (loglevel: string, text: string) {
         if(loglevel == "output")
             console.log(`\x1b[0m[ \x1b[32mOutput\x1b[0m ]  ${text}`);
         if(loglevel == "info")
