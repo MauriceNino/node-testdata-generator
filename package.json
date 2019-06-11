@@ -2,20 +2,20 @@
   "name": "node-testdata-generator",
   "version": "1.0.0",
   "description": "Generates testdata with a schema that is read from a file.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "files": [
-    "dist/**/*"
+    "dist/src/**/*"
   ],
   "scripts": {
     "publish": "npm run build && npm publish --access=public",
     "publish:private": "npm run build && npm publish --access=private",
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "test": "test"
+    "test": "npm run build && jasmine"
   },
   "bin": {
-    "node-testdata-generator": "dist/index.js"
+    "node-testdata-generator": "dist/src/index.js"
   },
   "dependencies": {
     "@types/faker": "^4.1.5",
@@ -26,7 +26,11 @@
     "faker": "^4.1.0",
     "sqlite3": "^4.0.8"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/jasmine": "^3.3.13",
+    "jasmine": "^3.4.0",
+    "nodemon": "^1.19.1"
+  },
   "keywords": [
     "node",
     "mongodb",
@@ -43,5 +47,8 @@
     "url": "https://github.com/MauriceNino/node-testdata-generator/issues"
   },
   "homepage": "https://github.com/MauriceNino/node-testdata-generator/blob/master/README.md",
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

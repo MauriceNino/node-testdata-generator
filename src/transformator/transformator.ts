@@ -52,11 +52,7 @@ export class Transformator {
                         })
                         singleInsert+=");";
                         
-                        db.serialize(() => {
-                            var stmt = db.prepare("INSERT INTO temp_out (`value`) VALUES (?)");
-                            stmt.run(singleInsert);
-                            stmt.finalize();
-                        });
+                        Transformator.insertSingleInsert(db, singleInsert);
                     });
                 }, () => {
                     resolve();
@@ -68,6 +64,7 @@ export class Transformator {
     public static async transformToMongo(db: sqlite3.Database, bulkinsertMax: number): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             db.serialize(() => {
+                //TODO: Remove row on done (free up ram)
                 db.each("SELECT dbName, collectionName, value FROM temp_store", (err, row) => {
                     let tempColl: IGeneratedCollection = {
                         dbName: row.dbName,

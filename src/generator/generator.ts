@@ -437,7 +437,7 @@ export class Generator {
     }
     
     private static nextRandomDecimalBetween(min: number, max: number): number {
-        return Math.random() * Math.floor(max);
+        return Math.random() * (min - max) + max;
     }
 
     private static nextRandomNumber(max: number): number {
@@ -445,7 +445,9 @@ export class Generator {
     }
 
     private static nextRandomNumberBetween(min: number, max: number): number {
-        return Generator.nextRandomNumber(max - min +1) + min;
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
       
 }

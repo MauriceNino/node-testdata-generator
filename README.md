@@ -71,8 +71,8 @@ First of all, install the package in your project like this:
     
 And then import it like this:
 
-    import { NodeTestdataGenerator } from 'node-testdata-generator/dist/core/worker';
-    import { CmdOpts } from 'node-testdata-generator/dist/models/modelInput';
+    import { NodeTestdataGenerator } from 'node-testdata-generator/dist/src/core/worker';
+    import { CmdOpts } from 'node-testdata-generator/dist/src/models/modelInput';
     
 After that you can call it like so:
 
