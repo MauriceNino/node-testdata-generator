@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/MauriceNino/node-testdata-generator.svg?branch=master)](https://travis-ci.org/MauriceNino/node-testdata-generator)
 
 # node-testdata-generator
 Generates configurable testdata with a predefined schema. 
@@ -12,7 +13,7 @@ To use it you have several options. You can use it from the command line or from
 ## Command line
 Install the package like this:
 
-    npm install -g @mauricenino/node-testdata-generator
+    npm install -g node-testdata-generator
     
 And then call it like this:
 
@@ -76,16 +77,19 @@ And then import it like this:
     
 After that you can call it like so:
 
-    let opts: CmdOpts = new CmdOpts();
-    opts.schemaFile = "../schema.json";
+    var opts: CmdOpts = new CmdOpts();
+    opts.schemaFile = "../path/to/schema.json";
     opts.outputFormat= "mongodb";
-    
-    NodeTestdataGenerator.doWork(opts).then((dataHandle) => {
+
+    NodeTestdataGenerator.doWork(opts).then(async (dataHandle: DataHandle) => {
 		// Query through the dataHandle (data is shipped asynchronously due to potential RAM leak)
+        while(await dataHandle.hasNext()) {
+            console.log(await dataHandle.getNext());
+        }
 
         // After you are done, destroy the in memory database to free up resources
         NodeTestdataGenerator.destroyInMemoryDatabase();
-	});
+    });
 
 # Schema file configuration
 The basic schema with the required fields looks like this:

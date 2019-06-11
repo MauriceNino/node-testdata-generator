@@ -8,10 +8,11 @@ import { Generator } from "../generator/generator";
 import { Transformator } from "../transformator/transformator";
 
 import sqlite3 from "sqlite3";
+import { DataHandle } from "./dataHandle";
 var db = new sqlite3.Database(':memory:');
   
 export class NodeTestdataGenerator {
-    public static async doWork (opts: CmdOpts): Promise<any[]> {
+    public static async doWork (opts: CmdOpts): Promise<DataHandle> {
         if(opts.createTemplate) NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
         else {
             let collectionDescriptions: ICollectionDescription[] = JSON.parse(NodeTestdataGenerator.readData(opts.schemaFile));
@@ -25,7 +26,9 @@ export class NodeTestdataGenerator {
 
             await Transformator.transformTo(opts.outputFormat, dbConnection);
 
-            return;
+            let dh: DataHandle = new DataHandle(); 
+            dh.db = dbConnection;
+            return dh;
         }
     }
 
