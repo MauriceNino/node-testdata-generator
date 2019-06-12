@@ -7,7 +7,7 @@ describe("NodeTestdataGenerator", () => {
         expect(NodeTestdataGenerator).toBeTruthy();
     });
 
-    it("should create 3 inserts", (done) => {
+    xit("should create 3 inserts", (done) => {
         
         var opts: CmdOpts = new CmdOpts();
         opts.schemaFile = "samples/alltypes_temp_test.json";
