@@ -2,6 +2,8 @@
 
 # node-testdata-generator
 Generates configurable testdata with a predefined schema. 
+
+Feel free to contribute!
 # Features
 - Generate basic data like String, Number, autoIncrement, ObjectId, ...
 - Generate fake data with [Faker.js](https://github.com/marak/Faker.js/) 
