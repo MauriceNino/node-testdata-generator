@@ -6,8 +6,8 @@ install:
 - npm install
 script:
 - npm run test
-skip_cleanup: true
 deploy:
+  skip_cleanup: true
   provider: npm
   local_dir: dist
   email: mauriceprivat98@gmail.com
