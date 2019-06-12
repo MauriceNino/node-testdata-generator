@@ -1,6 +1,6 @@
 {
   "name": "node-testdata-generator",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Generates testdata with a schema that is read from a file.",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -8,7 +8,7 @@
     "dist/src/**/*"
   ],
   "scripts": {
-    "publish": "npm install && npm run build && npm publish --access=public",
+    "publish": "npm publish --access=public",
     "publish:private": "npm run build && npm publish --access=private",
     "build": "tsc",
     "build:watch": "tsc --watch",
