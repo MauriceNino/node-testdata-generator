@@ -1,7 +1,6 @@
 import { NodeTestdataGenerator } from "../../src/core/worker";
 import { CmdOpts } from "../../src/models/modelInput";
 import { DataHandle } from "../../src/core/dataHandle";
-import { AssertionError } from "assert";
 
 describe("NodeTestdataGenerator", () => {
     it("should be truthy", () => {
