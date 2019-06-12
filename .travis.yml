@@ -6,6 +6,7 @@ install:
 - npm install
 script:
 - npm run test
+skip_cleanup: true
 deploy:
   provider: npm
   local_dir: dist
