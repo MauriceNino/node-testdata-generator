@@ -15,8 +15,7 @@ export interface IGeneratedField {
     fieldIsObject?: boolean,
     fieldIsJsonObject?: boolean,
     fieldIsArray?: boolean,
+    unboxElements?: boolean,
     referenceKey?: number,
     referenceTo?: number
-
-    //TODO: Unbox array object field. When this is checked, the array needs to consist of objects with a single property which it can unbox
 }

@@ -1,8 +1,9 @@
 import { IGeneratedCollection, IGeneratedField } from "../models/modelGenerated";
 
 import sqlite3 from "sqlite3";
+import { NodeTestdataGenerator } from "../core/worker";
 export class Transformator {
-
+    private static allDocumentsTransformed: number = 0;
     public static async transformTo(outputFormat: string, db: sqlite3.Database): Promise<void> {
         switch (outputFormat) {
             case "json":
@@ -12,7 +13,7 @@ export class Transformator {
                 await Transformator.transformToSQL(db);
                 break;
             case "mongodb":
-                await Transformator.transformToMongo(db, 1);
+                await Transformator.transformToMongo(db);
                 break;
             default:
                 throw new Error(`Output format '${outputFormat}' is not allowed. Check '--help' for help`);
@@ -51,10 +52,13 @@ export class Transformator {
                             singleInsert += f.fieldNeedsQuotations?"'":"";
                         })
                         singleInsert+=");";
+
+                        Transformator.allDocumentsTransformed++;
+                        NodeTestdataGenerator.updateProgressbar(Transformator.allDocumentsTransformed);
                         
                         Transformator.insertSingleInsert(db, singleInsert);
-                        Transformator.deleteRow(db, row.id);
                     });
+                    Transformator.deleteRow(db, row.id);
                 }, () => {
                     resolve();
                 });
@@ -62,10 +66,9 @@ export class Transformator {
         });
     }
     
-    public static async transformToMongo(db: sqlite3.Database, bulkinsertMax: number): Promise<void> {
+    public static async transformToMongo(db: sqlite3.Database): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             db.serialize(() => {
-                //TODO: Remove row on done (free up ram)
                 db.each("SELECT rowid as id, dbName, collectionName, value FROM temp_store", (err, row) => {
                     let tempColl: IGeneratedCollection = {
                         dbName: row.dbName,
@@ -73,23 +76,9 @@ export class Transformator {
                         documents: JSON.parse(row.value)
                     }
 
-                    let singleInsert: string = `${tempColl.dbName}.${tempColl.collectionName}.insert(`;
 
-                    let isFirstDoc: boolean = true;
-                    tempColl.documents.forEach((document, index) => {
-                        if(index % bulkinsertMax == 0 && index != 0 && index < tempColl.documents.length) {
-                            singleInsert += ");";
-                            Transformator.insertSingleInsert(db, singleInsert);
-
-                            singleInsert = `${tempColl.dbName}.${tempColl.collectionName}.insert(`;
-
-                            isFirstDoc = true;
-                        }
-                        
-                        if(isFirstDoc) isFirstDoc = false;
-                        else singleInsert += ", ";
-
-                        singleInsert += "{";
+                    tempColl.documents.forEach((document) => {
+                        let singleInsert: string = `${tempColl.dbName}.${tempColl.collectionName}.insert({`;
 
                         let isFirstField: boolean = true;
                         document.documentFields.forEach(f => {
@@ -99,17 +88,17 @@ export class Transformator {
                                 if(isFirstField) isFirstField = false;
                                 else singleInsert += ", ";
             
-                                singleInsert += Transformator.transformSingleMongoField(f);
+                                singleInsert += field;
                             }
                         })
 
-                        singleInsert += "}";
+                        singleInsert += "});";
 
-                    });
-
-                    singleInsert+=");";
+                        Transformator.allDocumentsTransformed++;
+                        NodeTestdataGenerator.updateProgressbar(Transformator.allDocumentsTransformed);
                         
-                    Transformator.insertSingleInsert(db, singleInsert);
+                        Transformator.insertSingleInsert(db, singleInsert);
+                    });
                     Transformator.deleteRow(db, row.id);
                 }, () => {
                     resolve();
@@ -158,13 +147,25 @@ export class Transformator {
 
 
                 let isFirstObj: boolean = true;
-                returnStr += "{";
+                
+                if(!field.unboxElements)
+                    returnStr += "{";
+
                 arrField.forEach((arrField: any) => {
                     if(isFirstObj) isFirstObj = false;
                     else returnStr += ", "
-                    returnStr += Transformator.transformSingleMongoField(arrField);
+
+                    if(field.unboxElements) {
+                        if(field.fieldNeedsQuotations)
+                            returnStr +=  `"${arrField.fieldValue}"`;
+                        else
+                            returnStr +=  arrField.fieldValue;
+                    } else {
+                        returnStr += Transformator.transformSingleMongoField(arrField);
+                    }
                 })
-                returnStr += "}";
+                if(!field.unboxElements)
+                    returnStr += "}";
             });
             
             returnStr += "]";

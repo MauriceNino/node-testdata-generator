@@ -10,7 +10,6 @@ import { Transformator } from "../transformator/transformator";
 import sqlite3 from "sqlite3";
 import { DataHandle } from "./dataHandle";
 import { Bar, Presets } from "cli-progress";
-import { createDecipher } from "crypto";
 
 var db = new sqlite3.Database(':memory:');
   
@@ -41,6 +40,8 @@ export class NodeTestdataGenerator {
     public static progressBar: Bar;
 
     public static async cmdDoWork (opts: CmdOpts): Promise<void> {
+        let startingTime: number = new Date().getTime();
+
         NodeTestdataGenerator.allowProgressbar = true;
 
         if(opts.printHelp) NodeTestdataGenerator.printHelp();
@@ -91,7 +92,9 @@ export class NodeTestdataGenerator {
                     });
                 });
             } else {
+                NodeTestdataGenerator.startProgressBar("Transforming      ", total);
                 await Transformator.transformTo(opts.outputFormat, dbConnection);
+                NodeTestdataGenerator.stopProgressbar();
 
                 switch(opts.outputType) {
                     case "cmd":
@@ -108,9 +111,11 @@ export class NodeTestdataGenerator {
                             db.each("SELECT value FROM temp_out", (err, row) => {
                                 totalWritten++;
                                 NodeTestdataGenerator.updateProgressbar(totalWritten);
-                                NodeTestdataGenerator.appendToFile(opts.outputFilename, row.value)
+                                NodeTestdataGenerator.appendToFile(opts.outputFilename, row.value);
                             }, () => {
                                 NodeTestdataGenerator.stopProgressbar();
+                                console.log("");
+                                NodeTestdataGenerator.printOutput("info", `The generation of your testdata took ${endingTime-startingTime}ms and produced ${totalWritten} insert statements!`)
                             });
                         });
                         break;
@@ -119,8 +124,9 @@ export class NodeTestdataGenerator {
                 }
             }
         }
+        let endingTime: number = new Date().getTime();
 
-        //await NodeTestdataGenerator.destroyInMemoryDatabase();
+        await NodeTestdataGenerator.destroyInMemoryDatabase();
     }
 
     public static startProgressBar(prefix: string, total: number) {
@@ -193,7 +199,7 @@ export class NodeTestdataGenerator {
     }
 
     private static appendToFile(fileName: string, content: string): void {
-        fs.appendFileSync(fileName, content);
+        fs.appendFileSync(fileName, content+"\n");
     }
     
     private static createFile(fileName: string): number {

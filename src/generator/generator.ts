@@ -293,6 +293,10 @@ export class Generator {
                 break;
             case GeneratorTypes.Array:
                 returnField.fieldIsArray = true;
+                
+                if(fieldDescription.unboxElements)
+                    returnField.unboxElements = true;
+
                 const sizeOfArr: number = fieldDescription.size != null? 
                     fieldDescription.size
                     : Generator.nextRandomNumberBetween(fieldDescription.sizeFrom, fieldDescription.sizeTo);

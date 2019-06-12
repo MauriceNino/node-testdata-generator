@@ -54,6 +54,7 @@ export interface IDocumentFieldDescription {
     sizeFrom?: number;
     sizeTo?: number;
     subDocumentDescriptions?: IDocumentFieldDescription [];
+    unboxElements?: boolean;
 
     // Type date
     dateFrom?: string;
