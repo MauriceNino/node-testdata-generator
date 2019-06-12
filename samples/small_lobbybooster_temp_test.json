@@ -2,7 +2,7 @@
     {
         "databaseName": "db",
         "collectionName": "users",
-        "documentsCount": 1,
+        "documentsCount": 1000,
         "documentDescription": [
             {
                 "fieldName": "_id",
@@ -462,7 +462,7 @@
     {
         "databaseName": "db",
         "collectionName": "activeSearches",
-        "documentsCount": 5,
+        "documentsCount": 500,
         "documentDescription": [
             {
                 "fieldName": "_id",
@@ -586,7 +586,7 @@
     {
         "databaseName": "db",
         "collectionName": "passiveSearches",
-        "documentsCount": 1,
+        "documentsCount": 100,
         "documentDescription": [
             {
                 "fieldName": "_id",
@@ -691,7 +691,7 @@
     {
         "databaseName": "db",
         "collectionName": "privateChats",
-        "documentsCount": 4,
+        "documentsCount": 4000,
         "documentDescription": [
             {
                 "fieldName": "_id",
@@ -766,7 +766,7 @@
     {
         "databaseName": "db",
         "collectionName": "connectableServices",
-        "documentsCount": 2,
+        "documentsCount": 20,
         "documentDescription": [
             {
                 "fieldName": "_id",

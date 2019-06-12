@@ -9,10 +9,15 @@ import { Transformator } from "../transformator/transformator";
 
 import sqlite3 from "sqlite3";
 import { DataHandle } from "./dataHandle";
+import { Bar, Presets } from "cli-progress";
+import { createDecipher } from "crypto";
+
 var db = new sqlite3.Database(':memory:');
   
 export class NodeTestdataGenerator {
     public static async doWork (opts: CmdOpts): Promise<DataHandle> {
+        NodeTestdataGenerator.allowProgressbar = false;
+
         if(opts.createTemplate) NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
         else {
             let collectionDescriptions: ICollectionDescription[] = JSON.parse(NodeTestdataGenerator.readData(opts.schemaFile));
@@ -22,7 +27,7 @@ export class NodeTestdataGenerator {
             let dbConnection = await NodeTestdataGenerator.initializeInMemoryDatabase();
 
             await Generator.parseCollectionDescriptions(collectionDescriptions, 50, dbConnection);
-            await Generator.resolveCollectionKeys(dbConnection);
+            await Generator.resolveCollectionKeys(dbConnection, 0);
 
             await Transformator.transformTo(opts.outputFormat, dbConnection);
 
@@ -32,7 +37,12 @@ export class NodeTestdataGenerator {
         }
     }
 
+    public static allowProgressbar: boolean;
+    public static progressBar: Bar;
+
     public static async cmdDoWork (opts: CmdOpts): Promise<void> {
+        NodeTestdataGenerator.allowProgressbar = true;
+
         if(opts.printHelp) NodeTestdataGenerator.printHelp();
         else if(opts.createTemplate) NodeTestdataGenerator.writeTemplateToFile(opts.outputFilename);
         else {
@@ -42,8 +52,32 @@ export class NodeTestdataGenerator {
 
             let dbConnection = await NodeTestdataGenerator.initializeInMemoryDatabase();
 
+        
+            // Create progrssBar and start it
+            let total: number = 0;
+            
+            collectionDescriptions.forEach(d => {
+                let add = d.documentsCount==null?
+                    d.isDocumentStatic?
+                        d.staticDocuments.length
+                        :d.documentsCountTo-(d.documentsCountFrom-d.documentsCountTo/2)
+                    :d.documentsCount;
+
+                total+=add;
+            });
+            NodeTestdataGenerator.startProgressBar("Creating Testdata ", total);
+            // Parse the collection descriptions
             await Generator.parseCollectionDescriptions(collectionDescriptions, 50, dbConnection);
-            await Generator.resolveCollectionKeys(dbConnection);
+
+            NodeTestdataGenerator.stopProgressbar();
+
+            // Create progrssBar and start it
+            NodeTestdataGenerator.startProgressBar("Mapping Keys      ", total);
+
+            // Mapping Keys
+            await Generator.resolveCollectionKeys(dbConnection, total);
+
+            NodeTestdataGenerator.stopProgressbar();
 
             if(opts.outputType == "cmd" && opts.outputFormat == "json") {
                 db.serialize(() => {
@@ -68,9 +102,15 @@ export class NodeTestdataGenerator {
                         });
                         break;
                     case "file":
+                        let totalWritten: number = 0;
+                        NodeTestdataGenerator.startProgressBar("Writing to file   ", total);
                         db.serialize(() => {
                             db.each("SELECT value FROM temp_out", (err, row) => {
+                                totalWritten++;
+                                NodeTestdataGenerator.updateProgressbar(totalWritten);
                                 NodeTestdataGenerator.appendToFile(opts.outputFilename, row.value)
+                            }, () => {
+                                NodeTestdataGenerator.stopProgressbar();
                             });
                         });
                         break;
@@ -81,6 +121,25 @@ export class NodeTestdataGenerator {
         }
 
         //await NodeTestdataGenerator.destroyInMemoryDatabase();
+    }
+
+    public static startProgressBar(prefix: string, total: number) {
+        if(!NodeTestdataGenerator.allowProgressbar) return;
+
+        NodeTestdataGenerator.progressBar = new Bar({
+            format: prefix+"[{bar}] {percentage}% | {value}/{total}"
+        }, Presets.shades_classic);
+        NodeTestdataGenerator.progressBar.start(total, 0);
+    }
+
+    public static stopProgressbar() {
+        if(!NodeTestdataGenerator.allowProgressbar) return;
+        NodeTestdataGenerator.progressBar.stop();
+    }
+
+    public static updateProgressbar(current: number) {
+        if(!NodeTestdataGenerator.allowProgressbar) return;
+        NodeTestdataGenerator.progressBar.update(current);
     }
 
     private static async initializeInMemoryDatabase(): Promise<sqlite3.Database> {

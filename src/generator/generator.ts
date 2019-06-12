@@ -8,16 +8,17 @@ var faker: Faker.FakerStatic = require('faker');
 
 import sqlite3 from "sqlite3";
 import util from 'util';
+import { NodeTestdataGenerator } from "../core/worker";
 
 export class Generator {
     ////////////////////////////////////////
     // Generate the keys of testdata
     ////////////////////////////////////////
 
-    public static async resolveCollectionKeys(db: sqlite3.Database): Promise<void> {
+    private static totalDocumentsResolved = 0;
+    public static async resolveCollectionKeys(db: sqlite3.Database, total: number): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             let possibleKeys: Map<number, any[]> = new Map();
-
 
             db.serialize(() => {
                 db.each("SELECT dbName, collectionName, value FROM temp_store", function(err, row) {
@@ -37,27 +38,38 @@ export class Generator {
                             } else {
                                 possibleKeys.set(key, possibleKeys.get(key).concat(val));
                             }
-                        })
-                    });
-                });
-            });
-            db.serialize(() => {
-                db.each("SELECT rowid AS id, dbName, collectionName, value FROM temp_store", (err, row) => {
-                    let tempColl: IGeneratedCollection = {
-                        dbName: row.dbName,
-                        collectionName: row.collectionName,
-                        documents: JSON.parse(row.value)
-                    }
-                    
-                    tempColl.documents.forEach(d => {
-                        d.documentFields = Generator.fillReferencesInFields(d.documentFields, possibleKeys);
-                    });
+                        });
 
-                    let sql = `UPDATE temp_store SET value = '${JSON.stringify(tempColl.documents)}' WHERE rowid = ${row.id}`;
-                    
-                    db.exec(sql, (err) => {});
+                        Generator.totalDocumentsResolved++;
+                        NodeTestdataGenerator.updateProgressbar(Generator.totalDocumentsResolved);
+                    });
                 }, () => {
-                    resolve();
+                    Generator.totalDocumentsResolved = 0;
+                    NodeTestdataGenerator.stopProgressbar();
+                    NodeTestdataGenerator.startProgressBar("Applying Keys     ", total);
+        
+                    db.serialize(() => {
+                        db.each("SELECT rowid AS id, dbName, collectionName, value FROM temp_store", (err, row) => {
+                            let tempColl: IGeneratedCollection = {
+                                dbName: row.dbName,
+                                collectionName: row.collectionName,
+                                documents: JSON.parse(row.value)
+                            }
+                            
+                            tempColl.documents.forEach(d => {
+                                d.documentFields = Generator.fillReferencesInFields(d.documentFields, possibleKeys);
+        
+                                Generator.totalDocumentsResolved++;
+                                NodeTestdataGenerator.updateProgressbar(Generator.totalDocumentsResolved);
+                            });
+        
+                            let sql = `UPDATE temp_store SET value = '${JSON.stringify(tempColl.documents)}' WHERE rowid = ${row.id}`;
+                            
+                            db.exec(sql, (err) => {});
+                        }, () => {
+                            resolve();
+                        });
+                    });
                 });
             });
         });
@@ -141,6 +153,7 @@ export class Generator {
     // Generate the testdata
     ////////////////////////////////////////
 
+    private static totalDocumentsCreated = 0;
     public static async parseCollectionDescriptions(collectionDescriptions: ICollectionDescription[], maxKeepInRam: number, db: sqlite3.Database): Promise<void> {
         for(let i=0; i<collectionDescriptions.length; i++) {
             await Generator.generateCollection(collectionDescriptions[i], maxKeepInRam, db);
@@ -171,6 +184,9 @@ export class Generator {
 
             tempResultCollection.documents.push(tempResultDocument);
             generatedDocuments++;
+
+            Generator.totalDocumentsCreated++;
+            NodeTestdataGenerator.updateProgressbar(Generator.totalDocumentsCreated);
 
             if(generatedDocuments % maxKeepInRam == 0 && generatedDocuments != 0){
                 db.serialize(() => {
