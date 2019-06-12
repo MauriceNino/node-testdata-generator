@@ -17,11 +17,11 @@ describe("NodeTestdataGenerator", () => {
         let countDb: number = 0;
         NodeTestdataGenerator.doWork(opts).then(async (dataHandle: DataHandle) => {
             while(await dataHandle.hasNext()) {
-                let singleInsert: string = await dataHandle.getNext();
+                await dataHandle.getNext();
                 countDb++;
             }
 
-            NodeTestdataGenerator.destroyInMemoryDatabase();
+            await NodeTestdataGenerator.destroyInMemoryDatabase();
 
             expect(countDb).toBe(3);
 
