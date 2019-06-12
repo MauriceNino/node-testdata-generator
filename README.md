@@ -152,7 +152,7 @@ The above snippet is used and executed in a snippet below in the Examples sectio
 - position
 - constant
 - objectId
-- referenceFrom & referenceTo
+- referenceKey & referenceTo
 - select
 - faker
 
@@ -310,8 +310,8 @@ No additional fields needed. Generates a unique ObjectId for MongoDB.
 		"type": "objectId",
 		"nullPercentage": 0
 	}
-### referenceFrom & referenceTo
-Every referenceFrom Element will copy the value of a random element with referenceKey of the same id.
+### referenceKey & referenceTo
+Every referenceTo Element will copy the value of a random element with referenceKey of the same id.
 
 Look at this example with id `0`:
 
