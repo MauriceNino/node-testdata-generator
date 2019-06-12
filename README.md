@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/MauriceNino/node-testdata-generator.svg?branch=master)](https://travis-ci.org/MauriceNino/node-testdata-generator)
+[![Build Status](https://travis-ci.org/MauriceNino/node-testdata-generator.svg?branch=master)](https://travis-ci.org/MauriceNino/node-testdata-generator) [![Greenkeeper badge](https://badges.greenkeeper.io/MauriceNino/node-testdata-generator.svg)](https://greenkeeper.io/)
 
 # node-testdata-generator
 Generates configurable testdata with a predefined schema. 
