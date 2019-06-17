@@ -2,6 +2,7 @@ import { IGeneratedCollection, IGeneratedField } from "../models/modelGenerated"
 
 import sqlite3 from "sqlite3";
 import { NodeTestdataGenerator } from "../core/worker";
+
 export class Transformator {
     private static allDocumentsTransformed: number = 0;
     public static async transformTo(outputFormat: string, db: sqlite3.Database): Promise<void> {
@@ -156,8 +157,10 @@ export class Transformator {
                     else returnStr += ", "
 
                     if(field.unboxElements) {
-                        if(field.fieldNeedsQuotations)
+                        if(arrField.fieldNeedsQuotations)
                             returnStr +=  `"${arrField.fieldValue}"`;
+                        else if (arrField.fieldIsJsonObject)
+                            returnStr += `${JSON.stringify(arrField.fieldValue)}`;
                         else
                             returnStr +=  arrField.fieldValue;
                     } else {

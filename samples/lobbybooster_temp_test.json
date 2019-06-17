@@ -219,16 +219,9 @@
             },
             {
                 "fieldName": "role",
-                "type": "select",
-                "selectFromObjects": true,
+                "type": "referenceTo",
                 "nullPercentage": 0,
-                "fromArray": [
-                    { "roleName": "admin", "roleCode": 900 },
-                    { "roleName": "dev", "roleCode": 500 },
-                    { "roleName": "moderator", "roleCode": 200 },
-                    { "roleName": "premium", "roleCode": 150 },
-                    { "roleName": "admin", "roleCode": 100 }
-                ]
+                "referenceTo": 9
             },
             {
                 "fieldName": "friendsList",
@@ -373,6 +366,23 @@
                     }
                 ]
             }
+        ]
+    },
+    {
+        "databaseName": "db",
+        "collectionName": "roles",
+        "documentDescription": [
+            {
+                "fieldName": "_id",
+                "type": "objectId",
+                "nullPercentage": 0,
+                "referenceKey": 9
+            }
+        ],
+        "isDocumentStatic": true,
+        "injectIntoStatic": true,
+        "staticDocuments": [
+            { "roleName": "verified", "roleCode": 100 }
         ]
     },
     {
