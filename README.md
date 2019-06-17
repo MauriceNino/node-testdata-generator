@@ -65,7 +65,7 @@ This will read the schema from schema.json that is in the parent folden, generat
 
     node-testdata-generator --schema="../schema.json" --of=sql --ot=file --out=script.js
 
-## Usage in code // Not yet fully implemented
+## Usage in code
 It kinda works like in the command line, but you have to put in the parameters manually and read the output manually:
 
 First of all, install the package in your project like this:
@@ -147,7 +147,6 @@ The above snippet is used and executed in a snippet below in the Examples sectio
 - decimal
 - autoIncrement
 - boolean
-- boolean
 - array
 - object
 - date
@@ -197,13 +196,6 @@ Keep in mind that every type here is case sensitive.
 		"nullPercentage": 0,
 		"autoIncrementStart": 0, // Starts at index 0
 		"autoIncrementSteps": 1  // Increments by 1 on every element
-	}
-### boolean
-	{
-		"fieldName": "isAdmin",
-		"type": "boolean",
-		"nullPercentage": 0,
-		"percentTrue": 10  // Only 10% of the items get true as a value
 	}
 ### boolean
 	{
@@ -928,4 +920,7 @@ Output of the schema file when executed with following command:
     db.languages.insert({"_id": new ObjectId("5cfedb1544b4299ccd6e705f"), "code": "af", "name": "Afrikaans", "nativeName": "Afrikaans"});
 
 # Known problems
-- Unfinished product. Check back later for finished product (Or feel free to contribute)
+- multiple autoIncrements in the same collections dont work (they will share their increment values)
+- no weighting to fromArray, array, ...
+- heavy on disk
+- code is ugly

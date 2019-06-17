@@ -1,6 +1,6 @@
 {
   "name": "node-testdata-generator",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "Generates testdata with a schema that is read from a file.",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
