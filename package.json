@@ -31,7 +31,7 @@
   "devDependencies": {
     "@types/jasmine": "^3.3.13",
     "jasmine": "^3.4.0",
-    "nodemon": "^1.19.1"
+    "nodemon": "^2.0.1"
   },
   "keywords": [
     "node",
