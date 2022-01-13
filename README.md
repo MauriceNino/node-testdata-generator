@@ -1,3 +1,10 @@
+# This repository is archived!
+
+The tool has a lot of bugs, and I have no time for fixing it at the current time.
+Maybe I will one day, but until then, I recommend using other tools.
+
+<hr>
+
 [![npm version](https://badge.fury.io/js/node-testdata-generator.svg)](https://badge.fury.io/js/node-testdata-generator) [![Build Status](https://travis-ci.org/MauriceNino/node-testdata-generator.svg?branch=master)](https://travis-ci.org/MauriceNino/node-testdata-generator) [![Greenkeeper badge](https://badges.greenkeeper.io/MauriceNino/node-testdata-generator.svg)](https://greenkeeper.io/)
 
 # node-testdata-generator
